@@ -1,0 +1,11 @@
+venv/
+node_modules/
+__pycache__/
+*.pyc
+.flask_session/
+instance/
+.env
+.flaskenv
+*.swp
+*.swo
+.DS_Store

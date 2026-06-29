@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xterm.js Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
+    <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
+</head>
+<body>
+    <div id="terminal"></div>
+
+    <script>
+    const term = new Terminal({
+        cols: 200,
+        rows: 50
+    });
+    const terminalContainer = document.getElementById('terminal');
+    term.open(terminalContainer);
+
+    term.write('Welcome to Xterm.js Demo\r\n');
+
+    let command = '';
+
+    term.onData(e => {
+        if (e === '\r') {
+            term.write('\r\n');
+            handleCommand(command.trim());
+            term.write('$ ');
+            command = '';
+        } else if (e === '\x7F') {
+            if (command.length > 0) {
+                term.write('\b \b');
+                command = command.slice(0, -1);
+            }
+        } else {
+            term.write(e);
+            command += e;
+        }
+    });
+
+    function handleCommand(input) {
+        const args = input.split(' ');
+        const cmd = args[0];
+        const params = args.slice(1).join(' ');
+
+        switch (cmd) {
+            case 'echo':
+                term.write(params + '\r\n');
+                break;
+            case 'clear':
+                term.clear();
+                break;
+            default:
+                term.write(`Command not found: ${cmd}\r\n`);
+        }
+    }
+    </script>
+</body>
+</html>
