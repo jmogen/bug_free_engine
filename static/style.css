@@ -5,7 +5,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 100%);
+    background: linear-gradient(135deg, #300a24 0%, #1d0716 100%);
     font-family: 'Courier New', monospace;
     display: flex;
     justify-content: center;
@@ -19,18 +19,18 @@ body {
     width: 100%;
     max-width: 1000px;
     height: 90vh;
-    background: #0a0e27;
-    border: 2px solid #00ff00;
+    background: #300a24;
+    border: 2px solid #eeeeec;
     border-radius: 8px;
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 20px rgba(238, 238, 236, 0.12), inset 0 0 10px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .terminal-header {
-    background: linear-gradient(to right, #1a1a3e, #0a0e27);
-    border-bottom: 1px solid #00ff00;
+    background: linear-gradient(to right, #4b1037, #300a24);
+    border-bottom: 1px solid #eeeeec;
     padding: 8px 15px;
     display: flex;
     justify-content: space-between;
@@ -39,7 +39,7 @@ body {
 }
 
 .terminal-title {
-    color: #00ff00;
+    color: #eeeeec;
     font-weight: bold;
     font-size: 14px;
     letter-spacing: 2px;
@@ -53,27 +53,27 @@ body {
 .button {
     width: 20px;
     height: 20px;
-    border: 1px solid #00ff00;
+    border: 1px solid #eeeeec;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #00ff00;
+    color: #eeeeec;
     font-size: 12px;
     border-radius: 2px;
     transition: all 0.2s;
 }
 
 .button:hover {
-    background: #00ff00;
-    color: #0a0e27;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    background: #eeeeec;
+    color: #300a24;
+    box-shadow: 0 0 10px rgba(238, 238, 236, 0.45);
 }
 
 .button.close:hover {
-    background: #ff0000;
-    border-color: #ff0000;
-    color: #fff;
+    background: #dd0000;
+    border-color: #dd0000;
+    color: #eeeeec;
 }
 
 #terminal {
@@ -81,16 +81,38 @@ body {
     overflow: auto;
     /* remove left padding so text is anchored to the left */
     padding: 10px 0 10px 0;
+    background: #300a24;
 }
 
 /* Custom xterm styling */
+.xterm {
+    color: #eeeeec;
+    background-color: #300a24;
+}
+
 .xterm-cursor-layer {
     display: none !important;
 }
 
 .xterm-cursor-block {
-    color: #0a0e27;
-    background: #00ff00 !important;
+    color: #300a24;
+    background: #bbbbbb !important;
+}
+
+.xterm .xterm-screen {
+    background: #300a24;
+}
+
+.xterm .xterm-viewport {
+    background: #300a24;
+}
+
+.xterm .xterm-selection div {
+    background-color: rgba(180, 213, 255, 0.35) !important;
+}
+
+.xterm .xterm-selection {
+    background-color: rgba(180, 213, 255, 0.35) !important;
 }
 
 /* Scrollbar styling */
@@ -99,16 +121,16 @@ body {
 }
 
 #terminal::-webkit-scrollbar-track {
-    background: #0a0e27;
+    background: #300a24;
 }
 
 #terminal::-webkit-scrollbar-thumb {
-    background: #00ff00;
+    background: #eeeeec;
     border-radius: 5px;
 }
 
 #terminal::-webkit-scrollbar-thumb:hover {
-    background: #00cc00;
+    background: #d3d7cf;
 }
 
 /* Responsive design */
@@ -123,4 +145,28 @@ body {
     .xterm {
         font-size: 12px !important;
     }
+}
+
+/* Theme reference colors used by the terminal palette */
+:root {
+    --theme-bg: #300a24;
+    --theme-fg: #eeeeec;
+    --theme-cursor: #bbbbbb;
+    --theme-selection: #b4d5ff;
+    --theme-black: #2e3436;
+    --theme-red: #cc0000;
+    --theme-green: #4e9a06;
+    --theme-yellow: #c4a000;
+    --theme-blue: #3465a4;
+    --theme-magenta: #75507b;
+    --theme-cyan: #06989a;
+    --theme-white: #d3d7cf;
+    --theme-bright-black: #555753;
+    --theme-bright-red: #ef2929;
+    --theme-bright-green: #8ae234;
+    --theme-bright-yellow: #fce94f;
+    --theme-bright-blue: #729fcf;
+    --theme-bright-magenta: #ad7fa8;
+    --theme-bright-cyan: #34e2e2;
+    --theme-bright-white: #eeeeec;
 }

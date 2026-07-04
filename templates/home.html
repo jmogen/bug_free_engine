@@ -25,17 +25,43 @@
     const term = new Terminal({
         cols: 120,
         rows: 35,
-        theme: {
-            background: '#0a0e27',
-            foreground: '#00ff00',
-            cursor: '#00ff00'
-        }
+    theme: {
+        background: '#300a24',
+        foreground: '#eeeeec',
+        cursor: '#bbbbbb',
+        selectionBackground: '#b4d5ff',
+        selectionForeground: '#300a24',
+        black: '#2e3436',
+        red: '#cc0000',
+        green: '#4e9a06',
+        yellow: '#c4a000',
+        blue: '#3465a4',
+        magenta: '#75507b',
+        cyan: '#06989a',
+        white: '#d3d7cf',
+        brightBlack: '#555753',
+        brightRed: '#ef2929',
+        brightGreen: '#8ae234',
+        brightYellow: '#fce94f',
+        brightBlue: '#729fcf',
+        brightMagenta: '#ad7fa8',
+        brightCyan: '#34e2e2',
+        brightWhite: '#eeeeec'
+    }
     });
     const terminalContainer = document.getElementById('terminal');
     term.open(terminalContainer);
 
     let command = '';
     let currentPrompt = 'user@terminal:/home/user$ ';
+
+    function writeTerminalOutput(text) {
+        if (!text) {
+            return;
+        }
+        const normalized = text.replace(/\r?\n/g, '\r\n');
+        term.write(normalized);
+    }
 
     // Initialize terminal and show neofetch-style system info
     term.write('\r\n');
@@ -157,7 +183,7 @@
             } else {
                 // Display output
                 if (output) {
-                    term.write(output);
+                    writeTerminalOutput(output);
                     term.write('\r\n');
                 }
                 term.write(currentPrompt);
