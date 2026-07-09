@@ -256,5 +256,13 @@ def api_execute():
     )
 
 
+@app.get("/api/ip")
+def api_ip():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    if ip and "," in ip:
+        ip = ip.split(",")[0].strip()
+    return jsonify({"ip": ip or "unknown"})
+
+
 if __name__ == '__main__':
     app.run(debug=True)

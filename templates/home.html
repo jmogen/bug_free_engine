@@ -10,14 +10,6 @@
 </head>
 <body>
     <div class="terminal-container">
-        <!-- <div class="terminal-header">
-            <span class="terminal-title">Terminal Portfolio</span>
-            <span class="terminal-buttons">
-                <span class="button minimize">_</span>
-                <span class="button maximize">□</span>
-                <span class="button close">✕</span>
-            </span>
-        </div> -->
         <div id="terminal"></div>
     </div>
 
@@ -54,6 +46,12 @@
 
     let command = '';
     let currentPrompt = 'user@terminal:/home/user$ ';
+
+    // colors to use
+    const labelColor = '#7fd0b9';       // teal for labels
+    const valueColor = '#eeeeec';       // foreground for values
+    const promptColor = '#ad7fa8';      // magenta for prompt
+    const asciiColor = '#34e2e2';       // bright cyan fallback
 
     function writeTerminalOutput(text) {
         if (!text) {
@@ -116,64 +114,96 @@
 
     const browserAscii = {
         chrome: [
-        "           +++++          ",
-        "         ++++++++         ",
-        "        ++++++++++        ",
-        "        +++++++++++       ",
-        "       +++++@@@%%SS       ",
-        "       ++++****@SSS       ",
-        "       +++;*****SSS       ",
-        "       +++@*****SSS       ",
-        "       ++++@***@SSS       ",
-        "        ++++@@@SSSS       ",
-        "        ++++++;SSSS       ",
-        "         ++++;SSSS        ",
-        "          ++;%SSS         ",
+        "        +++++       ",
+        "        +++++       ",
+        "        +++++       ",
+        "   +++++++++++++++  ",
+        "   +++++++++++++++  ",
+        "++++++++++++++++++++",
+        "++++++++++++++++++++",
+        "++++++++*****%%SSSSS",
+        "++++++++*****%%SSSSS",
+        "+++;;**********SSSSS",
+        "+++;;**********SSSSS",
+        "+++++**********SSSSS",
+        "+++++**********SSSSS",
+        "++++++++*****;;SSSSS",
+        "++++++++*****;;SSSSS",
+        "++++++++++;;;SSSSSSS",
+        "++++++++++;;;SSSSSSS",
+        "   +++++++SSSSSSSS  ",
+        "   +++++++SSSSSSSS  ",
+        "        ;;SSS       ",
+        "        ;;SSS       ",
         ],
         firefox: [
-        "                ##        ",
-        "    ;   ::;;;+++####?     ",
-        "   ;;;::::;;;+++######S   ",
-        "  :;;+**??;;;+++########  ",
-        " ;;;++**??*?;+++SS####### ",
-        " :;;++**??*:;;;;+;SS###SSS",
-        "::;;++*+,,::::;;;;;#SSSSS?",
-        " :;;;+++*,,::::::::S%%%SS%",
-        " ::;;++***??%,,,,,%S%%%%% ",
-        " ::;;;+++**,,,,,%%%%%%??  ",
-        "   ::;;;+++***??????????  ",
-        "    ::;;;;++++********    ",
-        "       :;;;;;;++++:+      ",
+        "             #      ",
+        "            S#      ",
+        "      :;;;++###     ",
+        "  ;  ::;;+++####%   ",
+        "  ;++*??;+++#####S  ",
+        "  ;++*?:;;++######  ",
+        " ;;+**?*?*++SS##### ",
+        " ;;+**?*??;++SS#### ",
+        " ;;+**?%:;;;;+SS##S ",
+        ":;;+**??::;;;;:SSSSS",
+        ":;;+*+,:::::;;:%SSSS",
+        ":;;+++*,::::::,S%%SS",
+        ":;;++**??%%;::,S%%%%",
+        " :;;+***??%,,,SS%%% ",
+        " :;;++*..,,,,.%%%%% ",
+        " :;;;++**,,,%%%%%?+ ",
+        "  :;;;++**????????  ",
+        "   :;;;++***?????*  ",
+        "    :;;;+++*****    ",
+        "     :;;;+++++:     ",
+        "       ;;;;;++      ",
         ],
         edge: [
-        "          ???????         ",
-        "        ??????????        ",
-        "       ????????????       ",
-        "       ???????????%%      ",
-        "      ?;;;++;?????%%?     ",
-        "      ;;;+++  ;??????     ",
-        "      ;;;++,   ?*????     ",
-        "      ;;;;,:   ****?      ",
-        "      ;;;;::: ****?       ",
-        "       ;;;::::     ,      ",
-        "       ;;;:::::::::       ",
-        "        ;;;:::::::,       ",
-        "         ;;;:::::         ",
+        "      ????????      ",
+        "      ????????      ",
+        "    ??????????????  ",
+        "    ??????????????  ",
+        "  ????????????????%%",
+        "  ????????????????%%",
+        "??;;;;;;;;????????%%",
+        ";;++++++++;;??????%%",
+        ";;++++++++;;??????%%",
+        ";;;;++,,    ????????",
+        ";;;;++,,    ????????",
+        ";;;;;;::    ****????",
+        ";;;;;;::    ****????",
+        ";;;;,,::    ******  ",
+        ";;;;,,::::          ",
+        ";;;;,,::::          ",
+        "  ;;;;::::::::::::  ",
+        "  ;;;;::::::::::::  ",
+        "    ;;,,::::::::    ",
+        "    ;;,,::::::::    ",
+        "      ;;;;,,::      ",
         ],
         safari: [
-        "@@@@@@@@@@???????#@@@@@@@@",
-        "@#@@##???????????????#@@##",
-        "@@@@??????????????*????@@@",
-        "#@*****************:****#@",
-        "@#***************::******#",
-        "#*************:::*********",
-        "@*@********@@:::**********",
-        "#+++++++++@%%%++++++++++++",
-        "#+++++++@%%++++++++++++++#",
-        "@#++++++++++++++++++++++@#",
-        "#@#++++++++++++++++++++@@@",
-        "@#@@#;;;;;;;;;;;;;;;+#@@##",
-        "#@##@@#@@;;;;;;;;;@@@@##@@",
+        "@#@#@#@@????#@#@#@#@",
+        "#@#@#???@??@???#@#@#",
+        "@#@#??@??????@??#@#@",
+        "#@#?@??????????@;#@#",
+        "@#*@***********:@*#@",
+        "#*************:****#",
+        "@*@**********:***@*@",
+        "@**********::+*****@",
+        "*@********:::*****@*",
+        "*********?::********",
+        "++*+++++@%++++++++++",
+        "+@+++++@%%++++++++@+",
+        "#++++++%%++++++++++#",
+        "@+@+++%*+++++++++@+@",
+        "#++++%+++++++++++++#",
+        "@#+@%+++++++++++@+#@",
+        "#@#?@++;+++++++@;#@#",
+        "@#@#;;@;;;;;;@;;#@#@",
+        "#@#@#;;;@;;@;;;#@#@#",
+        "@#@#@#@@;;;;#@#@#@#@",
+        "                    ",
         ],
         generic: [
         "  _______  ",
@@ -185,60 +215,165 @@
         ],
     };
 
+    // Per-character color grids, sampled directly from reference logo images.
+    // Each entry is a 2D array aligned to the matching browserAscii art:
+    // grid[row][col] is a hex string or null (null = use fallback row/palette color).
+    // Only browsers with a supplied reference image get a real grid; others
+    // fall back to browserColorPalettes below.
+    const browserColorGrids = {
+        chrome: [[null, null, null, null, null, null, null, null, "#dd4e42", "#dd4d41", "#dd4d40", "#dd4c40", "#dc4b3e", null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", null, null, null, null, null, null, null], [null, null, null, "#d85144", "#de5448", "#de5347", "#de5347", "#de5246", "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", "#dd4d40", "#dd4c40", "#dc4b3e", "#dc493c", "#dc493c", null, null], [null, null, null, "#d44f42", "#da5044", "#de5246", "#de5347", "#de5246", "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", "#dd4d40", "#dd4c40", "#dc4b3e", "#dc493c", "#dc493c", null, null], [null, "#c9483a", "#cd493c", "#cf4a3c", "#da5044", "#de5347", "#de5246", "#de5145", "#de5145", "#dd5044", "#e0a138", "#e3a539", "#e3a539", "#e8aa38", "#ebad39", "#f0b239", "#f4b539", "#fcbc3a", "#fcbc3a", "#f2c242"], ["#1fa463", "#22a565", "#cb493b", "#d34c3e", "#d34c3e", "#d84f42", "#de5145", "#de5145", "#4e8df5", "#4b8bf5", "#498af4", "#4889f4", "#e5a839", "#ebad39", "#fcbc3a", "#fcbc3a", "#fcbc3a", "#fcbc3a", "#fcbc3a", "#fcbc3a"], ["#1ba261", "#22a565", "#22a565", "#cb493b", "#d34c3e", "#d84f42", "#dc4b3e", "#4b8bf5", "#4c8cf5", "#4d8cf5", "#4c8cf5", "#4889f4", "#4889f4", "#f7b839", "#fcbc3a", "#fcbc3a", "#fdc13c", "#fdc13c", "#fdc13c", "#fdc13c"], ["#1da362", "#20a464", "#20a464", "#bb4335", "#cf4a3c", "#d34c3e", "#498af4", "#4d8cf5", "#4d8cf5", "#4c8cf5", "#4c8cf5", "#4b8bf5", "#4889f4", "#edb23b", "#fdc23f", "#fec63f", "#fec63f", "#fec63f", "#fec63f", "#fec63f"], ["#17a05d", "#1fa463", "#1fa463", "#1da362", "#c14334", "#cf4a3c", "#4b8bf5", "#4d8cf5", "#4c8cf5", "#4c8cf5", "#4b8bf5", "#4b8bf5", "#498af4", "#4889f4", "#fec641", "#ffcc43", "#ffcc43", "#ffcc43", "#ffce42", "#ffcd40"], ["#19a15f", "#1da362", "#1fa463", "#1fa463", "#c14334", "#c9483a", "#4b8bf5", "#4c8cf5", "#4c8cf5", "#4b8bf5", "#4b8bf5", "#498af4", "#498af4", "#4889f4", "#ffcd44", "#ffcd44", "#ffcd44", "#ffce43", "#ffce42", "#ffcd40"], ["#1da362", "#1da362", "#1da362", "#1da362", "#1ba261", "#c9483a", "#498af4", "#4c8cf5", "#4b8bf5", "#4b8bf5", "#4b8bf5", "#498af4", "#498af4", "#4889f4", "#ffcd44", "#ffcd44", "#ffce44", "#ffce43", "#ffcd41", "#ffcd40"], ["#19a15f", "#1ba261", "#1ba261", "#1ba261", "#1ba261", "#1aa260", "#4b8bf5", "#498af4", "#4b8bf5", "#498af4", "#498af4", "#498af4", "#4889f4", "#4889f4", "#fec940", "#ffcd44", "#ffce43", "#ffce42", "#ffcd41", "#ffcd40"], ["#1aa260", "#1aa260", "#1aa260", "#1aa260", "#1aa260", "#1aa260", "#18a15f", "#4889f4", "#4889f4", "#498af4", "#498af4", "#4889f4", "#4889f4", "#ffcd41", "#ffcd44", "#ffce43", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40"], ["#17a05e", "#1aa260", "#1aa260", "#1aa260", "#1aa260", "#18a15f", "#18a15f", "#18a15f", "#4889f4", "#498af4", "#4889f4", "#4889f4", "#ffce42", "#ffcd41", "#ffce43", "#ffce42", "#ffce42", "#ffcd41", "#ffcd40", "#ffcd40"], ["#21995d", "#17a05e", "#18a15f", "#18a15f", "#18a15f", "#18a15f", "#18a15f", "#18a15f", "#159f5c", "#16a05d", "#149f5b", "#1d9b5d", "#ffcd41", "#ffce43", "#ffce43", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40", "#f2c242"], [null, "#159f5c", "#16a05d", "#18a15f", "#18a15f", "#17a05e", "#17a05e", "#16a05d", "#16a05d", "#149f5b", "#149f5b", "#ffcd40", "#ffcd40", "#ffce42", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40", "#ffcd40", null], [null, null, null, "#16a05d", "#16a05d", "#16a05d", "#16a05d", "#16a05d", "#16a05d", "#149f5b", "#139d5a", "#ffcd40", "#ffce42", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40", "#ffcd40", null, null], [null, null, null, "#16a05d", "#149f5b", "#16a05d", "#149f5b", "#149f5b", "#149f5b", "#149f5b", "#ffcd40", "#ffcd40", "#ffcd41", "#ffcd41", "#ffcd41", "#ffcd40", "#ffcd40", null, null, null], [null, null, null, null, null, null, null, null, "#139f5b", "#139b58", "#ffcd40", "#ffcd41", "#ffcd41", null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, "#139f5b", "#ffcd40", "#ffcd40", "#ffcd41", "#ffcd40", null, null, null, null, null, null, null]],
+        edge: [[null, null, null, null, null, null, "#33c1ee", "#33c1ee", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3ce", "#107eba", "#1088ce", null, null, null, null, null, null], [null, null, null, null, null, null, "#30c2e6", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#107eba", "#1088ce", null, null, null, null, null, null], [null, null, null, null, "#33c1ee", "#33c1ee", "#33c1ee", "#33c1ee", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3ce", "#31c7b8", "#32c798", "#32c798", "#38c9a0", null, null], [null, null, null, null, "#33c1ee", "#33c1ee", "#33c1ee", "#33c1ee", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3d6", "#31c7b8", "#40d09f", "#40d09f", "#38c9a0", null, null], [null, null, "#33c1ee", "#33c1ee", "#33c1ee", "#0e8edc", "#0e8edc", "#0e8edc", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3d6", "#31c7b8", "#40d09f", "#48d590", "#51dc71", "#38c9a0", null], [null, null, "#0e8edc", "#0e8edc", "#0e8edc", "#0e8edc", "#1088ce", "#0e8edc", "#1088ce", "#1088ce", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3d6", "#31c7b8", "#40d09f", "#48d590", "#52dc82", "#38c9a0", "#38c9a0"], ["#33c1ee", "#0e8edc", "#0e8edc", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0e8edc", "#0e8edc", "#1088ce", "#1088ce", "#2bc3d6", "#2bc3d6", "#2bc3ce", "#31c7b8", "#40d09f", "#44d27d", "#51dc71", "#5de474", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0e8edc", "#0e8edc", "#0e8edc", "#0e8edc", "#1088ce", "#1088ce", "#107eba", "#2dc4c3", "#32c798", "#32c798", "#44d27d", "#51dc71", "#42cf5c", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0783d8", "#0783d8", "#0e8edc", "#0e8edc", "#0e8edc", "#0e8edc", "#1088ce", "#1088ce", "#1088ce", "#107eba", "#32c798", "#33c885", "#44d27d", "#44d27d", "#42cf5c", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0783d8", "#0783d8", "#037cd5", "#0e8edc", null, null, null, null, "#0b7ec6", "#107eba", "#32c798", "#33c885", "#44d27d", "#44d27d", "#44d27d", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0783d8", "#037cd5", "#0a64ae", null, null, null, null, "#0b7ec6", "#0c70a7", "#33c885", "#33c885", "#33c873", "#33c873", "#44d27d", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0a64ae", null, null, null, null, "#0c70a7", "#0c70a7", "#33c885", "#33c873", "#33c873", "#33c873", "#47d469", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0b549d", "#0874b8", null, null, null, null, "#33c873", "#33c873", "#33c873", "#33c873", "#33c873", "#33c864", "#38c9a0", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0874b8", null, null, null, null, "#33c873", "#33c864", "#33c864", "#33c864", "#37c855", "#37c855", null, null], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0874b8", "#0a64ae", "#0a64ae", null, null, null, null, null, null, null, null, null, null], ["#2095ac", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0874b8", "#0c70a7", "#0a64ae", null, null, null, null, null, null, null, null, null, null], [null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0c70a7", "#0874b8", "#0c70a7", "#0b549d", "#0b549d", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", null, null], [null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0c70a7", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0c5196", "#0c5196", "#0e4d90", "#0a64ae", null, null], [null, null, null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0c70a7", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0c5196", "#0a64ae", null, null, null, null], [null, null, null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0a64ae", "#0a64ae", null, null, null, null], [null, null, null, null, null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0a64ae", null, null, null, null, null, null]],
+        safari: [["#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7"], ["#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7"], ["#e6e7e7", "#e6e7e7", "#e6e7e7", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#e6e7e7", "#e6e7e7", "#e6e7e7"], ["#e6e7e7", "#e6e7e7", "#19c6fd", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#19d1ff", "#ff0000", "#19c6fd", "#e6e7e7", "#e6e7e7"], ["#e6e7e7", "#19c6fd", "#19c6fd", "#19d1ff", "#19d1ff", "#19d1ff", "#19c6fd", "#19c6fd", "#19c6fd", "#19c6fd", "#19c6fd", "#19c6fd", "#19c6fd", "#19c6fd", "#ff0000", "#ff0000", "#ff0000", "#19c6fd", "#19c6fd", "#e6e7e7"], ["#e6e7e7", "#19bcfc", "#19d1ff", "#19d1ff", "#19d1ff", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#ff0000", "#ff0000", "#ff0000", "#19c6fd", "#19c6fd", "#19bcfc", "#e6e7e7"], ["#1ab1fb", "#19bcfc", "#19d1ff", "#19c6fd", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#19bcfc", "#ff0000", "#ff0000", "#ff0000", "#19bcfc", "#19c6fd", "#19c6fd", "#19bcfc", "#19bcfc"], ["#19bcfc", "#19bcfc", "#19c6fd", "#19bcfc", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#ff0000", "#ff0000", "#ff0000", "#ff0000", "#1ab1fb", "#19bcfc", "#19c6fd", "#19bcfc", "#19bcfc"], ["#1ab1fb", "#19c6fd", "#19bcfc", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#19bcfc", "#ff0000", "#ff0000", "#ff0000", "#ff0000", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#19bcfc", "#19bcfc", "#1ab1fb"], ["#1ab1fb", "#19bcfc", "#19bcfc", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#ff0000", "#ff0000", "#ff0000", "#ff0000", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#1ab1fb", "#19bcfc", "#19bcfc", "#1ab1fb"], ["#1ba5f9", "#1ab1fb", "#1ab1fb", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#19bcfc", "#ff0000", "#ff0000", "#ff0000", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ab1fb", "#1ab1fb", "#1ba5f9"], ["#1ba5f9", "#1ab1fb", "#1ab1fb", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ab1fb", "#1ab1fb", "#e6e7e7", "#ff0000", "#ff0000", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1ab1fb", "#1ab1fb", "#1ba5f9"], ["#1ba5f9", "#1ab1fb", "#1ba5f9", "#1c98f7", "#1c98f7", "#1c98f7", "#1ba5f9", "#1ab1fb", "#acabac", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1ba5f9", "#1ab1fb", "#1c98f7"], ["#1c98f7", "#1ba5f9", "#1ba5f9", "#1ab1fb", "#1c98f7", "#1ba5f9", "#1ba5f9", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1ab1fb", "#1ba5f9", "#1ba5f9", "#1c98f7"], ["#1c98f7", "#1c98f7", "#1ba5f9", "#1ba5f9", "#1c8af5", "#1ba5f9", "#1c98f7", "#1c98f7", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1ba5f9", "#1ba5f9", "#1c98f7", "#1c98f7"], ["#e6e7e7", "#1c98f7", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1c98f7", "#1c98f7", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1c98f7", "#e6e7e7"], ["#e6e7e7", "#1c98f7", "#1c8af5", "#1ba5f9", "#1ba5f9", "#1ba5f9", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1c8af5", "#1ba5f9", "#1c98f7", "#1ba5f9", "#1c98f7", "#1c8af5", "#e6e7e7"], ["#e6e7e7", "#e6e7e7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c7cf4", "#1c7cf4", "#1c7cf4", "#1c7cf4", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#e6e7e7", "#e6e7e7"], ["#e6e7e7", "#e6e7e7", "#e6e7e7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c98f7", "#1c8af5", "#e6e7e7", "#e6e7e7", "#e6e7e7"], ["#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#1c98f7", "#1c98f7", "#1c8af5", "#1c98f7", "#1c98f7", "#1c8af5", "#1c98f7", "#1c98f7", "#1c98f7", "#1c8af5", "#1c8af5", "#1c8af5", "#e6e7e7", "#e6e7e7", "#e6e7e7", "#e6e7e7"], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]],
+        firefox: [[null, null, null, null, null, null, null, null, null, null, null, null, null, "#feeb00", null, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null, null, null, "#ffea00", "#ffea00", null, null, null, null, null, null], [null, null, null, null, null, null, "#0856da", "#0069ee", "#007af9", "#0083ff", "#008afc", "#0098f4", "#ffea00", "#fff14f", "#ffea00", null, null, null, null, null], [null, null, "#e92143", null, null, "#1847c2", "#0659de", "#ff9000", "#ff9800", "#0087fd", "#008ff9", "#009ff1", "#ffea00", "#fff14e", "#fff04d", "#ffef4d", "#ffb400", null, null, null], [null, null, "#db2144", "#d7293f", "#ff4d1c", "#ff6b0f", "#ff8504", "#ff9400", "#007cfa", "#0089fc", "#0091f8", "#00a2ef", "#ffea00", "#fff04d", "#ffef4c", "#ffee4b", "#ffed4a", "#ffd600", null, null], [null, null, "#fd262f", "#ff3b24", "#ff5917", "#ff730b", "#ff8e00", "#ff9400", "#007bfa", "#0087fd", "#008cfa", "#009ef1", "#ffea00", "#ffee4b", "#ffec4a", "#ffec49", "#ffeb48", "#ffe946", null, null], [null, "#f01f3e", "#ff272d", "#ff4122", "#ff5e15", "#ff7909", "#ff9000", "#ff8906", "#0077f7", "#0082ff", "#0084fe", "#0096f5", "#ffe800", "#ffe900", "#ffea47", "#ffe946", "#ffe744", "#ffe542", "#fec700", null], [null, "#f2203b", "#ff292c", "#ff4420", "#ff6014", "#ff7b08", "#ff9300", "#ff9c00", "#ff7f14", "#ff9f10", "#0085fe", "#008bfb", "#008dfa", "#ffe400", "#ffe400", "#ffe542", "#ffe340", "#ffe13d", "#ffdf3b", null], [null, "#f3213a", "#ff2a2b", "#ff4620", "#ff6114", "#ff7c08", "#ff9400", "#ff9d00", "#ff7116", "#0073f4", "#007dfb", "#0083ff", "#0085fe", "#008afc", "#ffdd00", "#ffdc00", "#ffde3a", "#ffdc38", "#ffd935", null], ["#d91357", "#f3213a", "#ff292c", "#ff4520", "#ff6014", "#ff7b08", "#ff9300", "#ff9c00", "#0658dd", "#0065eb", "#0070f3", "#0078f8", "#007cfb", "#007efc", "#ffea00", "#ffd500", "#ffd400", "#ffd531", "#ffd22d", "#ff8d16"], ["#d6115a", "#f11f3d", "#ff272d", "#ff4121", "#ff4f1b", "#e54b23", "#242d97", "#1938a5", "#144bc9", "#0956d9", "#0060e8", "#0068ed", "#006df0", "#006ef1", "#0056c9", "#ffea00", "#ffcc00", "#ffca00", "#ffca25", "#ff801a"], ["#d10f60", "#ed1d41", "#fe262e", "#ff3c24", "#ff491e", "#ff501b", "#ff6014", "#2b33a4", "#213db4", "#1847c2", "#104fcf", "#0956d9", "#055adf", "#6c9fed", "#0446b7", "#ffe600", "#ffc300", "#ffc000", "#ffc620", "#ffbf1b"], ["#c90b68", "#e71a48", "#fb2532", "#ff3427", "#ff4121", "#ff5c16", "#ff8006", "#ff8d00", "#2e309f", "#ffb200", "#ffbe00", "#1a44bf", "#1748c4", "#7694dd", "#0f369d", "#ffdc00", "#ffb200", "#ffb800", "#ffb600", "#ffb810"], [null, "#de1651", "#f52238", "#ff2b2b", "#ff4121", "#ff501b", "#fb6f12", "#fd8805", "#ff9b01", "#ffa800", "#ffb300", "#ffb900", "#2737aa", "#808ace", "#ffce00", "#ffcf00", "#ffad00", "#ffaf00", "#ffae00", null], [null, "#d3105d", "#ed1d41", "#fd262f", "#ff3726", "#ff4f1b", "#ff6611", "#762e54", "#e699b5", "#2b196f", "#3d2189", "#322c9a", "#2f2f9e", "#2e30a0", "#ffc000", "#ffaa00", "#ffa800", "#ffa600", "#ffa700", null], [null, "#c5086d", "#e1174d", "#f62237", "#ff2a2c", "#ff4022", "#ff5618", "#ff6b0f", "#4a1475", "#47177a", "#431b80", "#401e84", "#ffa900", "#ffae00", "#ffb000", "#ffa400", "#ffa100", "#ff9e00", "#ff9c00", null], [null, null, "#d20f5e", "#ea1c44", "#fb2532", "#ff2f29", "#ff4420", "#ff5818", "#ff6a10", "#ff7a08", "#ff8902", "#ff8f00", "#ff9600", "#ff9c00", "#ff9b00", "#ff9b00", "#ff9a00", "#ff9500", null, null], [null, null, null, "#da1455", "#ef1f3e", "#fc2630", "#ff3128", "#ff4420", "#ff5519", "#ff6412", "#ff720c", "#ff7d07", "#ff8703", "#ff8c01", "#ff8e00", "#ff8f00", "#ff8405", "#ff7f07", null, null], [null, null, null, null, "#de1651", "#f01f3d", "#fc2630", "#ff2f29", "#ff3f23", "#ff4d1c", "#ff5917", "#ff6412", "#ff6c0f", "#ff720c", "#ff760a", "#ff6a10", null, null, null, null], [null, null, null, null, null, "#e81b46", "#f62236", "#fe272d", "#ff282d", "#ff3527", "#ff4022", "#ff4a1e", "#ff511a", "#ff5618", "#ff511a", null, null, null, null, null], [null, null, null, null, null, null, null, "#f2203b", "#fc2531", "#fc2530", "#ff272d", "#ff3029", "#ff3726", "#ff3b24", null, null, null, null, null, null]]
+    };
+
     const ascii = browserAscii[browser.key] || browserAscii.generic;
+    const colorGrid = browserColorGrids[browser.key] || null;
 
     // System info lines (will align with ASCII on the right)
     const hostname = 'user@portfolio';
     const separator = '-'.repeat(hostname.length);
     const ramInfo = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'unknown';
     const cpuInfo = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'unknown';
-    
+
     // Create color palette string
     const colors = [
         '#000000', '#dd0000', '#00dd00', '#dddd00',
         '#0000dd', '#dd00dd', '#00dddd', '#cccccc'
     ];
     const colorLine = colors.map(c => `\x1b[48;2;${parseInt(c.slice(1,3),16)};${parseInt(c.slice(3,5),16)};${parseInt(c.slice(5,7),16)}m  \x1b[0m`).join('');
-    
-    const sysInfo = [
-        `${hostname}`,
-        separator,
-        `Browser: ${browser.name} ${browser.version}`,
-        `Platform: ${navigator.platform || 'unknown'}`,
-        `Language: ${navigator.language || 'en-US'}`,
-        `Resolution: ${window.innerWidth}x${window.innerHeight}`,
-        `RAM: ${ramInfo}`,
-        `CPU: ${cpuInfo}`,
-        `Terminal: xterm.js`,
-        `Uptime: Always on`,
-        `IP: localhost`,
-        colorLine,
+
+    // helper: convert hex to rgb
+    function hexToRgb(hex) {
+        const h = hex.replace('#','');
+        return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+    }
+
+    // helper: wrap text with truecolor ANSI foreground (reset after)
+    function colorText(text, hex) {
+        const [r,g,b] = hexToRgb(hex);
+        return `\x1b[38;2;${r};${g};${b}m${text}\x1b[0m`;
+    }
+
+    // Density-based color gradients using each browser's real brand hues.
+    // Characters are ranked light -> dark by typical ink density, then mapped
+    // onto a brand color gradient at that same position. This isn't pixel-
+    // sampled like Firefox's colorGrid (no reference image yet for these),
+    // but it's driven by the actual brand colors instead of a guess per row,
+    // so the shading follows the art's real density pattern.
+    const DENSITY_ORDER = [',', '.', ':', ';', '+', '?', '*', 'S', '%', '#', '@'];
+
+    const browserGradients = {
+        chrome: ['#aecbfa', '#8ab4f8', '#669df6', '#4285f4', '#1a73e8', '#174ea6', '#0b3d91'],
+        edge:   ['#9beed0', '#50e6ff', '#00b7c3', '#0078d4', '#005a9e', '#003d6b', '#00223d'],
+        safari: ['#bcdcfb', '#8ec9f7', '#5aa9e6', '#2f8fe0', '#1e6fd9', '#0d4ea3', '#0a3572'],
+        generic: ['#34e2e2', '#22b8b8', '#178e8e']
+    };
+
+    function densityColor(browserKey, ch) {
+        const gradient = browserGradients[browserKey] || browserGradients.generic;
+        const rank = DENSITY_ORDER.indexOf(ch);
+        if (rank === -1) return gradient[gradient.length - 1];
+        const t = rank / (DENSITY_ORDER.length - 1);
+        const idx = Math.round(t * (gradient.length - 1));
+        return gradient[idx];
+    }
+
+    // Longest line in the active art sets the padding width so the info
+    // column still aligns even though rows are different lengths.
+    const asciiWidth = Math.max(...ascii.map(l => l.length));
+
+    // prepare colored ascii, per character:
+    // 1. real pixel-sampled colorGrid, if we have a reference image for this browser (Firefox)
+    // 2. brand-hue density gradient otherwise (Chrome, Edge, Safari, generic)
+    const asciiColored = ascii.map((line, ri) => {
+        const padded = (line || '').padEnd(asciiWidth);
+        let out = '';
+        for (let ci = 0; ci < padded.length; ci++) {
+            const ch = padded[ci];
+            if (ch === ' ') {
+                out += ch;
+                continue;
+            }
+            const sampledHex = colorGrid && colorGrid[ri] ? colorGrid[ri][ci] : null;
+            const hex = sampledHex || densityColor(browser.key, ch);
+            out += colorText(ch, hex);
+        }
+        return out;
+    });
+
+    let currentIp = 'fetching...';
+
+    function buildSysPairs(ipText) {
+        return [
+            ['Host', hostname],
+            ['Browser', `${browser.name} ${browser.version}`],
+            ['Platform', navigator.platform || 'unknown'],
+            ['Language', navigator.language || 'en-US'],
+            ['Resolution', `${window.innerWidth}x${window.innerHeight}`],
+            ['RAM', ramInfo],
+            ['CPU', cpuInfo],
+            ['Terminal', 'xterm.js'],
+            ['Uptime', 'Always on'],
+            ['IP', ipText],
+        ];
+    }
+
+    function renderBanner() {
+        term.reset(); // instead of term.clear()
+
+        const sysPairs = buildSysPairs(currentIp);
+
+    const sysInfoColored = sysPairs.map(([label, val]) => {
+        const labelPlain = (label + ':').padEnd(12);            // pad label plain
+        const labelCol = colorText(labelPlain, labelColor);    // then color
+        const valueCol = colorText(String(val), valueColor);
+        return `${labelCol} ${valueCol}`;
+    });
+
+    // add color palette as last sys line (it's already using background ANSI)
+    sysInfoColored.push(colorLine);
+
+    // Bottom-align the system details beside the ASCII art.
+    const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
+    const sysInfoBottomAligned = [
+        ...Array(sysPadding).fill(''),
+        ...sysInfoColored,
     ];
 
-    // Fetch IP address and update sysInfo (for non-localhost environments)
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        fetch('https://api.ipify.org?format=json')
-            .then(r => r.json())
-            .then(data => {
-                sysInfo[sysInfo.length - 2] = `IP: ${data.ip}`;
-            })
-            .catch(() => {
-                sysInfo[sysInfo.length - 2] = `IP: unavailable`;
-            });
-    }
+    // spacing / gap between ascii and sys info
+    const gap = '  '; // reduce or increase as desired
 
-    // Combine ASCII art and system info side-by-side
-    const maxLines = Math.max(ascii.length, sysInfo.length);
+    // Combine ASCII art and system info side-by-side (use plain padding before coloring)
+    const maxLines = Math.max(asciiColored.length, sysInfoBottomAligned.length);
     for (let i = 0; i < maxLines; i++) {
-        const asciiLine = (ascii[i] || '            ').padEnd(12);
-        const infoLine = sysInfo[i] || '';
-        term.write(asciiLine + '    ' + infoLine + '\r\n');
+        const asciiLine = asciiColored[i] || ''.padEnd(asciiWidth);
+        const infoLine = sysInfoBottomAligned[i] || '';
+        term.write(asciiLine + gap + infoLine + '\r\n');
     }
 
-    term.write('\r\n');
+        term.write('\r\n');
+        term.write('\r\nType "help" for available commands\r\n\r\n');
+        term.write(currentPrompt);
+    }
 
-    term.write('\r\nType "help" for available commands\r\n\r\n');
-    term.write(currentPrompt);
+    async function loadIp() {
+        try {
+            const res = await fetch('/api/ip');
+            const data = await res.json();
+            currentIp = data.ip || 'unknown';
+        } catch {
+            currentIp = 'unavailable';
+        }
+        renderBanner();
+    }
+
+    renderBanner();
+    loadIp();
+
+    // term.write('\r\n');
+    // term.write('\r\nType "help" for available commands\r\n\r\n');
+    // term.write(currentPrompt);
 
     term.onData(e => {
         if (e === '\r') {
@@ -289,8 +424,9 @@
         .then(data => {
             const output = data.output;
             const prompt = data.prompt;
-            currentPrompt = prompt;
-
+            // keep the prompt colored so it persists across subsequent commands
+            currentPrompt = colorText(prompt, promptColor);
+ 
             // Handle special commands
             if (output === '[CLEAR]') {
                 term.clear();
