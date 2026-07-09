@@ -320,41 +320,39 @@
     }
 
     function renderBanner() {
-        term.reset(); // instead of term.clear()
+        term.reset();
 
         const sysPairs = buildSysPairs(currentIp);
 
-    const sysInfoColored = sysPairs.map(([label, val]) => {
-        const labelPlain = (label + ':').padEnd(12);            // pad label plain
-        const labelCol = colorText(labelPlain, labelColor);    // then color
-        const valueCol = colorText(String(val), valueColor);
-        return `${labelCol} ${valueCol}`;
-    });
+        const sysInfoColored = sysPairs.map(([label, val]) => {
+            const labelPlain = (label + ':').padEnd(12);
+            const labelCol = colorText(labelPlain, labelColor);
+            const valueCol = colorText(String(val), valueColor);
+            return `${labelCol} ${valueCol}`;
+        });
 
-    // add color palette as last sys line (it's already using background ANSI)
-    sysInfoColored.push(colorLine);
+        sysInfoColored.push(colorLine);
 
-    // Bottom-align the system details beside the ASCII art.
-    const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
-    const sysInfoBottomAligned = [
-        ...Array(sysPadding).fill(''),
-        ...sysInfoColored,
-    ];
+        const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
+        const sysInfoBottomAligned = [
+            ...Array(sysPadding).fill(''),
+            ...sysInfoColored,
+        ];
 
-    // spacing / gap between ascii and sys info
-    const gap = '  '; // reduce or increase as desired
-
-    // Combine ASCII art and system info side-by-side (use plain padding before coloring)
-    const maxLines = Math.max(asciiColored.length, sysInfoBottomAligned.length);
-    for (let i = 0; i < maxLines; i++) {
-        const asciiLine = asciiColored[i] || ''.padEnd(asciiWidth);
-        const infoLine = sysInfoBottomAligned[i] || '';
-        term.write(asciiLine + gap + infoLine + '\r\n');
-    }
+        const gap = '  ';
+        const maxLines = Math.max(asciiColored.length, sysInfoBottomAligned.length);
+        for (let i = 0; i < maxLines; i++) {
+            const asciiLine = asciiColored[i] || ''.padEnd(asciiWidth);
+            const infoLine = sysInfoBottomAligned[i] || '';
+            term.write(asciiLine + gap + infoLine + '\r\n');
+        }
 
         term.write('\r\n');
         term.write('\r\nType "help" for available commands\r\n\r\n');
-        term.write(currentPrompt);
+        
+        // Color the prompt HERE, every time the banner renders
+        const coloredPrompt = colorText(currentPrompt, promptColor);
+        term.write(coloredPrompt);
     }
 
     async function loadIp() {
