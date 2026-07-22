@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
     <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
+    <script src="https://unpkg.com/@xterm/addon-web-links/lib/addon-web-links.js"></script>
 </head>
 <body>
     <div class="terminal-container">
         <div id="terminal"></div>
     </div>
-
     <script>
     const term = new Terminal({
         cols: 120,
@@ -44,6 +44,9 @@
     const terminalContainer = document.getElementById('terminal');
     term.open(terminalContainer);
 
+    const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+    term.loadAddon(webLinksAddon);
+
     let command = '';
     let currentPrompt = 'user@terminal:/home/user$ ';
 
@@ -52,6 +55,40 @@
     const valueColor = '#eeeeec';       // foreground for values
     const promptColor = '#ad7fa8';      // magenta for prompt
     const asciiColor = '#34e2e2';       // bright cyan fallback
+
+    const labelColors = {
+    'name': '7fd0b9',      // teal, matches Project label
+    'description': '7fd0b9',
+    'website': '06989a',   // cyan for links
+    'github': '06989a',
+    'demo': 'ad7fa8',      // magenta for extras
+    };
+
+    const displayLabel = {
+        'name': 'Project',
+        'description': 'Description',
+        'website': 'Website',
+        'github': 'Github',
+        'demo': 'Demo',
+    };
+
+    function renderProject(data) {
+        const lines = [];
+        for (const [key, value] of Object.entries(data)) {
+            const label = displayLabel[key] || key.charAt(0).toUpperCase() + key.slice(1);
+            const hex = labelColors[key] || 'eeeeec';
+            const coloredLabel = colorText(`${label}:`, hex);
+
+            if (key === 'name') {
+                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`); // bold project title
+            } else if (key === 'website' || key === 'github') {
+                lines.push(`${coloredLabel} ${colorText(value, '06989a')}`);
+            } else {
+                lines.push(`${coloredLabel} ${value}`);
+            }
+        }
+        return lines.join('\r\n');
+    }
 
     function writeTerminalOutput(text) {
         if (!text) {
@@ -490,19 +527,18 @@ term.onData(e => {
         .then(data => {
             const output = data.output;
             const prompt = data.prompt;
-            // keep the prompt colored so it persists across subsequent commands
             currentPrompt = colorText(prompt, promptColor);
- 
-            // Handle special commands
+
             if (output === '[CLEAR]') {
                 term.clear();
                 term.write(currentPrompt);
+            } else if (output && typeof output === 'object' && output.type === 'project') {
+                term.write(renderProject(output.data));
+                term.write('\r\n');
+                term.write(currentPrompt);
             } else {
-                // Display output
-                if (output) {
-                    writeTerminalOutput(output);
-                    term.write('\r\n');
-                }
+                if (output) writeTerminalOutput(output);
+                term.write('\r\n');
                 term.write(currentPrompt);
             }
         })
