@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
     <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
     <script src="https://unpkg.com/@xterm/addon-web-links/lib/addon-web-links.js"></script>
+    <script src="https://unpkg.com/@xterm/addon-fit/lib/addon-fit.js"></script>
 </head>
 <body>
     <div class="terminal-container">
@@ -44,8 +45,22 @@
     const terminalContainer = document.getElementById('terminal');
     term.open(terminalContainer);
 
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    fitAddon.fit();
+
     const webLinksAddon = new WebLinksAddon.WebLinksAddon();
     term.loadAddon(webLinksAddon);
+
+    // window.addEventListener('resize', () => {
+    //     fitAddon.fit();
+    // });
+
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => fitAddon.fit(), 100);
+    });
 
     let command = '';
     let currentPrompt = 'user@terminal:/home/user$ ';
