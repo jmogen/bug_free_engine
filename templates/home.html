@@ -307,6 +307,11 @@
     function buildSysPairs(ipText) {
         return [
             ['Host', hostname],
+            ['Github', 'github.com/username'],
+            ['LinkedIn', 'linkedin.com/in/username'],
+            ['Email', 'user@example.com'],
+            ['Eduction,', 'University of Waterloo'],
+            ['Degree', 'B.A.Sc. Computer Engineering'],
             ['Browser', `${browser.name} ${browser.version}`],
             ['Platform', navigator.platform || 'unknown'],
             ['Language', navigator.language || 'en-US'],
@@ -347,7 +352,7 @@
             term.write(asciiLine + gap + infoLine + '\r\n');
         }
 
-        term.write('\r\n');
+        // term.write('\r\n');
         term.write('\r\nType "help" for available commands\r\n\r\n');
         
         // Color the prompt HERE, every time the banner renders
@@ -366,7 +371,7 @@
         renderBanner();
     }
 
-    renderBanner();
+    // renderBanner();
     loadIp();
 
     // term.write('\r\n');
