@@ -360,5 +360,14 @@ def api_ip():
     return jsonify({"ip": ip or "unknown"})
 
 
+@app.get("/api/autocomplete")
+def api_autocomplete():
+    current = terminal_state['current_dir']
+    files = list(DIRECTORY_FILES.get(current, {}).keys())
+    subdirs = [d.rstrip('/') for d in DIRECTORY_SUBDIRS.get(current, [])]
+    commands = ['help', 'ls', 'pwd', 'whoami', 'clear', 'echo', 'cat',
+                'about', 'mkdir', 'sudo', 'cd', 'uname', 'date']
+    return jsonify({'commands': commands, 'files': files, 'dirs': subdirs})
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -359,6 +359,49 @@
         const coloredPrompt = colorText(currentPrompt, promptColor);
         term.write(coloredPrompt);
     }
+    async function handleTabComplete() {
+        const parts = command.split(' ');
+        const isFirstWord = parts.length === 1;
+
+        try {
+            const res = await fetch('/api/autocomplete');
+            const data = await res.json();
+
+            let candidates;
+            if (isFirstWord) {
+                candidates = data.commands;
+            } else {
+                const cmdWord = parts[0];
+                candidates = (cmdWord === 'cd') ? data.dirs : [...data.files, ...data.dirs];
+            }
+
+            const currentArg = parts[parts.length - 1];
+            const matches = candidates.filter(c => c.startsWith(currentArg));
+
+            if (matches.length === 1) {
+                const completion = matches[0].slice(currentArg.length);
+                term.write(completion);
+                command += completion;
+            } else if (matches.length > 1) {
+                // Find longest common prefix among matches
+                let prefix = matches[0];
+                for (const m of matches) {
+                    let i = 0;
+                    while (i < prefix.length && i < m.length && prefix[i] === m[i]) i++;
+                    prefix = prefix.slice(0, i);
+                }
+                const completion = prefix.slice(currentArg.length);
+                if (completion) {
+                    term.write(completion);
+                    command += completion;
+                } else {
+                    term.write('\r\n' + matches.join('  ') + '\r\n' + currentPrompt + command);
+                }
+            }
+        } catch (err) {
+            console.error('Autocomplete error', err);
+        }
+    }
 
     async function loadIp() {
         try {
