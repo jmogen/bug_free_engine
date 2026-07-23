@@ -121,6 +121,34 @@ async def fetch_lines_changed(session, username, repos):
 
     return total_added, total_deleted
 
+async def fetch_language_breakdown(session, username, repos):
+    headers = {
+        "Authorization": f"Bearer {os.environ['ACCESS_TOKEN']}",
+        "Accept": "application/vnd.github+json",
+    }
+    language_totals = {}
+
+    for repo in repos:
+        repo_name = repo["name"]
+        url = f"{REST_URL}/repos/{username}/{repo_name}/languages"
+        async with session.get(url, headers=headers) as resp:
+            if resp.status != 200:
+                print(f"{repo_name}: languages status {resp.status}, skipping")
+                continue
+            data = await resp.json()
+
+        for lang, bytes_count in data.items():
+            language_totals[lang] = language_totals.get(lang, 0) + bytes_count
+
+    total_bytes = sum(language_totals.values())
+    if total_bytes == 0:
+        return {}
+
+    breakdown = {
+        lang: round((count / total_bytes) * 100, 2)
+        for lang, count in language_totals.items()
+    }
+    return dict(sorted(breakdown.items(), key=lambda x: x[1], reverse=True))
 
 async def fetch_stats(session, username):
     account_info = await fetch_repos_and_account_info(session, username)
@@ -141,6 +169,8 @@ async def fetch_stats(session, username):
     stats["lines_added"] = lines_added
     stats["lines_deleted"] = lines_deleted
     stats["lines_changed"] = lines_added + lines_deleted
+
+    stats["languages"] = await fetch_language_breakdown(session, username, repos)
 
     return stats
 
