@@ -266,21 +266,20 @@ Use 'cd projects' then 'ls' to see my work.`;
     }
 
     function cmdCat(args) {
-        if (!args.length) return 'Usage: cat <filename>';
+    if (!args.length) return "Usage: cat <filename>";
         const filename = args[0];
         const current = terminalState.currentDir;
-        const files = DIRECTORY_FILES[current] || {};
 
-        if (!(filename in files)) {
-            return `cat: ${filename}: No such file or directory`;
+        if (current === "/home/user" && filename === "README.md") {
+            return getReadmeContent();
         }
 
+        const files = DIRECTORY_FILES[current];
+        if (!files || !(filename in files)) return `cat: ${filename}: No such file or directory`;
         const content = files[filename];
-        if (current === '/home/user/projects') {
-            return { type: 'project', data: content };
-        }
+        if (current === "/home/user/projects") return { type: "project", data: content };
         return content;
-    }
+}
 
     function cmdCd(args) {
         if (!args.length) {
@@ -831,7 +830,7 @@ Use 'cd projects' then 'ls' to see my work.`;
         }
         renderBanner();
     }
-
+    loadGithubStats();
     loadIp();
 
     let commandHistory = [];
@@ -913,6 +912,53 @@ Use 'cd projects' then 'ls' to see my work.`;
             term.write('\r\n'); // just the blank line, no output line to end
         }
         term.write(currentPrompt);
+    }
+
+    let ghStats = {
+        repos: "loading...",
+        stars: "loading...",
+        forks: "loading...",
+        contributions_all_time: "loading...",
+        commits: "loading...",
+        pull_requests: "loading...",
+        pr_reviews: "loading...",
+        issues: "loading...",
+        lines_added: "loading...",
+        lines_deleted: "loading...",
+        lines_changed: "loading...",
+    };
+
+    async function loadGithubStats() {
+        try {
+            const res = await fetch(
+                "https://raw.githubusercontent.com/jmogen/bug_free_engine/main/generated/stats.json"
+            );
+            ghStats = await res.json();
+        } catch {
+            ghStats = {
+                repos: "N/A", stars: "N/A", forks: "N/A",
+                contributions_all_time: "N/A", commits: "N/A",
+                pull_requests: "N/A", pr_reviews: "N/A", issues: "N/A",
+                lines_added: "N/A", lines_deleted: "N/A", lines_changed: "N/A",
+            };
+        }
+    }
+
+    function getReadmeContent() {
+        return `Welcome to My Portfolio
+
+    This is my personal portfolio website. Check out the projects and skills!
+
+    GitHub Stats (all-time):
+    Repos:          ${ghStats.repos}
+    Contributions:  ${ghStats.contributions_all_time}
+    Commits:        ${ghStats.commits}
+    Pull Requests:  ${ghStats.pull_requests}
+    PR Reviews:     ${ghStats.pr_reviews}
+    Lines Added:    ${ghStats.lines_added}
+    Lines Deleted:  ${ghStats.lines_deleted}
+    Lines Changed:  ${ghStats.lines_changed}
+    `;
     }
     </script>
 </body>
