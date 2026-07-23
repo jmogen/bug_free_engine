@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terminal Portfolio</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
     <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
     <script src="https://unpkg.com/@xterm/addon-web-links/lib/addon-web-links.js"></script>
@@ -15,32 +15,321 @@
         <div id="terminal"></div>
     </div>
     <script>
+    const PROJECTS = {
+        'Fretless Minds — AI-Powered Robotic Ukulele': {
+        name: 'Fretless Minds — AI-Powered Robotic Ukulele (ECE Capstone Project)',
+        description: 'Group capstone project that takes a natural language text prompt, generates sheet music using a locally-run transformer model, and physically plays it on a ukulele in under 45 seconds. The hardware uses four SG90 servo motors for strumming and eight linear solenoids for fretting, all mounted on custom 3D-printed housings and controlled via an Arduino over serial. The software layer is a Python REST API that parses AI-generated ABC notation into hardware commands using music21, with a Flutter frontend for mobile input. My contribution was the hardware assembly and system integration, coordinating the software and hardware subsystems into a working prototype.',
+        website: 'https://uwaterloo.ca/capstone-design/project-abstracts/2026-capstone-design-projects/2026-electrical-and-computer-engineering-capstone-designs#58',
+        demo: 'just ask and I can dust it off for a live performance',
+        },
+        'Highway Path Planning for Autonomous Vehicle': {
+            name: 'Highway Path Planning for Autonomous Vehicle',
+            description: 'Built a path planner in C++ that drives a simulated car around a busy highway: merging, passing slower traffic, and dodging other cars, all while keeping the ride smooth (no sudden jerks or hard braking). It reads live sensor data every 20ms and re-plots a fresh route using spline curves so the car never jolts around like it\'s had too much coffee.',
+            github: 'https://github.com/jmogen/CarND-Path-Planning-Project',
+        },
+        'Kinematic Bicycle Model Trajectory': {
+            name: 'Kinematic Bicycle Model Trajectory',
+            description: 'Implemented a kinematic bicycle model from scratch in Python (state variables, sideslip angle, Euler integration) and used it to drive a virtual vehicle through circles, squares, spirals, wave paths, and a figure-8 loop with two 8m-radius circles in 30 seconds. Turns out getting a car-like robot to trace a clean figure 8 using only pre-computed speed and steering-rate inputs (no feedback) is trickier than it sounds, small timing errors compound fast, which is basically why real self-driving cars use closed-loop control instead.',
+            github: 'https://github.com/jmogen/trajectory_planning',
+        },
+        'Extended Kalman Filter for LIDAR Vehicle Localization': {
+            name: 'Extended Kalman Filter for LIDAR Vehicle Localization',
+            description: 'Built an EKF from scratch in Python to track a vehicle\'s 2D pose (x, y, heading) using noisy odometry and LIDAR range/bearing measurements to known landmarks. Implemented the full prediction-correction loop by hand, including Jacobians, Kalman gain, and covariance propagation, and watched the estimated trajectory converge onto ground truth once the math clicked into place. Basically taught me why every self-driving car and drone runs some flavor of this filter under the hood.',
+            github: 'https://github.com/jmogen/extended_kalman_filter',
+        },
+        'Single-Stage Object Detector': {
+            name: 'Single-Stage Object Detector (YOLO)',
+            description: 'Built a YOLO-style single-stage object detector in PyTorch on top of a MobileNetV2 backbone, implementing anchor generation, IoU matching, proposal decoding, and a full multi-part loss (confidence, bounding box regression, classification) from scratch. Trained and evaluated it on PASCAL VOC 2007 using mean Average Precision, and even hand-rolled non-max suppression just to see how it stacks up against torchvision\'s optimized version. It\'s a scaled-down version of the real thing, but it\'s the same core recipe every modern real-time detector still builds on.',
+            github: 'https://github.com/jmogen/object_detection',
+        },
+        'Semantic Segmentation on VOC': {
+            name: 'Semantic Segmentation on VOC (U-Net + ResNet34)',
+            description: 'Built a semantic segmentation network in PyTorch by grafting a U-Net-style decoder with skip connections onto a pretrained ResNet34 encoder, then trained it on the PASCAL VOC dataset to label every pixel in an image (car, bicycle, person, background, etc). Wrote custom data augmentation (random crop, horizontal flip) that had to stay in sync between the image and its segmentation mask, which turned out to be sneakier than it sounds since one off-by-one error and your labels no longer line up with your pixels. Evaluated the final model using mean IoU on a few driving-relevant classes, since pixel-level scene understanding is basically the backbone of how self-driving cars "see" the road.',
+            github: 'https://github.com/jmogen/semantic_segmentation',
+        },
+        'Two-Layer Neural Network from Scratch': {
+            name: 'Two-Layer Neural Network from Scratch',
+            description: 'Implemented a fully-connected two-layer neural network in NumPy, writing the forward pass, softmax loss, backward pass, and SGD training loop by hand instead of relying on autograd. Verified every gradient with numerical checks before trusting it, then trained the network on CIFAR-10 and tuned hyperparameters (hidden layer size, learning rate, regularization) to push validation accuracy up. It\'s basically the "build your own PyTorch, one layer at a time" exercise.',
+            github: 'https://github.com/jmogen/vanilla_neural_network',
+        },
+        'Lane Line Detection with Classical Computer Vision': {
+            name: 'Lane Line Detection with Classical Computer Vision',
+            description: 'Built an image processing pipeline in OpenCV that finds lane lines on the road using grayscale conversion, Gaussian blur, Canny edge detection, and Hough transform line detection, then applied it to a video stream frame by frame. Went a step further than basic averaging by using RANSAC regression to fit a single continuous line per lane, which made the pipeline far more resistant to outlier line segments and noisy detections. It\'s a good reminder that before deep learning ate computer vision, this kind of classical pipeline is genuinely how early self-driving systems found their lane.',
+            github: 'https://github.com/jmogen/CarND-LaneLines-P1',
+        },
+        'Deer Tracker': {
+            name: 'Deer Tracker (Real-Time YOLO Detection)',
+            description: 'Built a real-time deer detection system using a custom-trained YOLO model running on a live USB camera feed, drawing bounding boxes and confidence scores directly onto the video stream. Implemented two modes: full object detection (with boxes for deer, cow, and horse-like classes) and a lighter classification-only mode for full-frame "deer or not" predictions. Started as a random idea but ended up being a solid intro to deploying a trained model against live sensor input instead of a static dataset.',
+            github: 'https://github.com/jmogen/Deer_Tracker',
+        },
+        'Parallel Matrix Multiplication': {
+            name: 'Parallel Matrix Multiplication (MPI)',
+            description: 'Built a distributed matrix multiplication system in C++ using MPI, splitting the workload across multiple processor cores on a compute cluster. Ran strong-scaling experiments (fixed problem size, more processors) and time-to-solution benchmarks (bigger matrices, same processor count) up to 3072x3072, then validated every result against a NumPy ground truth to make sure "faster" didn\'t quietly become "wrong." Watching near-linear speedup actually show up on a graph after tuning communication patterns was a genuinely satisfying payoff.',
+            github: 'Available upon request',
+        },
+        'Distributed Data Processing': {
+            name: 'Distributed Data Processing (Apache Spark)',
+            description: 'Implemented a series of data processing tasks in Scala using Apache Spark\'s RDD API, covering filtering, aggregation, grouping, and multi-stage join operations across a real Spark cluster. Also built a classic word-count job to sanity check the setup before tackling the harder transformations. It\'s a solid crash course in why "lazy evaluation" matters once your dataset actually needs to be split across machines instead of fitting comfortably on one laptop.',
+            github: 'Available upon request',
+        },
+        'Fault-Tolerant Password Hashing Service': {
+            name: 'Fault-Tolerant Password Hashing Service (Apache Thrift)',
+            description: 'Built a distributed bcrypt hashing microservice using Apache Thrift RPC, with a frontend node that dynamically discovers and load-balances across any number of backend worker nodes. The interesting design challenge was graceful degradation: if every backend drops offline, the frontend falls back to hashing locally instead of just failing outright. Tested it under concurrent client load to make sure the load balancing logic actually held up and not just in the happy-path demo.',
+            github: 'Available upon request',
+        },
+        'Distributed Coordination Experiments': {
+            name: 'Distributed Coordination Experiments (Apache ZooKeeper)',
+            description: 'Ran a series of fault-injection experiments on a multi-node ZooKeeper ensemble, covering leader election, node failure and recovery, network partition handling, and client session continuity. Deliberately killed nodes and simulated partitions mid-experiment to see how the consensus protocol actually behaved under quorum loss, rather than just reading about it in the Raft/Zab papers.',
+            github: 'Available upon request',
+        },
+        'Fibonacci Benchmark Suite': {
+            name: 'Fibonacci Benchmark Suite (Python + C++/pybind11)',
+            description: 'Inspired by Sheafification of G\'s "largest Fibonacci number in 1 second" video, I built a test bench comparing six Fibonacci implementations, naive recursion, iterative, and fast doubling, each written twice, once in pure Python and once in C++ exposed back to Python via pybind11. The harness runs every implementation for a fixed time window and tracks throughput and max-n-reached, then auto-generates comparison graphs and a ranked summary report so the numbers speak for themselves. Watching naive recursion flatline while fast doubling keeps climbing is a much more visceral way to feel the difference between exponential and logarithmic time than any textbook chart, and re-implementing the ideas myself (rather than just watching someone else\'s benchmark) was half the fun.',
+            github: 'https://github.com/jmogen/fast_fibonacci',
+        },
+        'MySQL Database/Table Explorer': {
+            name: 'MySQL Database/Table Explorer (C API)',
+            description: 'Built a command-line tool in C++ (using C++ as "a better C," no exceptions or RTTI) that connects directly to a MySQL server through the low-level C API to list databases and tables, complete with optional pattern matching to filter results by name. Handled secure password entry, command-line argument parsing with getopt, and SQL injection prevention by strictly validating any user-supplied pattern before it ever touches a query string. It\'s a good exercise in working close to the metal with a real database driver instead of an ORM, where every connection handle and result buffer has to be managed by hand.',
+            github: 'Available upon request',
+        },
+        'M/M/1 Queue Simulator': {
+            name: 'M/M/1 Queue Simulator (Discrete Event Simulation)',
+            description: 'Built a discrete event simulator in Python modeling a single-server queue with Poisson packet arrivals and exponentially distributed packet lengths, then used random "observer" arrivals (rather than direct sampling) to estimate steady-state metrics like average queue size E[n] and probability of an idle server, avoiding the bias that comes from sampling only at arrival or departure events. Validated the random number generators first by checking that generated exponential variables matched their theoretical mean and variance before trusting them in the full simulation. Sweeping utilization (rho) from lightly loaded to overloaded and watching E[n] blow up past rho = 1 is a pretty visceral way to see why network engineers sweat over keeping utilization comfortably below 100%.',
+            github: 'Available upon request',
+        },
+        'Web Crawler with HTML Parsing': {
+            name: 'Web Crawler with HTML Parsing (libcurl + libxml2)',
+            description: 'Built a web crawler in C, using libcurl\'s custom write and header callbacks to buffer received data and extract sequence numbers from HTTP headers. Parses fetched HTML with libxml2 using XPath queries to extract hyperlinks, handles both HTML and PNG content types differently, and manages memory correctly across callbacks to prevent buffer corruption. Supports HTTP redirects and authentication credentials.',
+            github: 'Available upon request',
+        },
+        'Real-Time Scheduler Simulator': {
+            name: 'Real-Time Scheduler Simulator (Deadline Monotonic)',
+            description: 'Implemented a real-time task scheduler simulator in Python that performs schedulability analysis and job-level simulation for periodic tasks. Uses response time analysis with Audsley\'s algorithm to check if task sets can meet deadlines under deadline monotonic priority assignment. Generates jobs across the hyperperiod and simulates preemptive scheduling, tracking preemption counts per task. Optimizes for large hyperperiods by using limited simulation windows to avoid timeout issues while maintaining accuracy.',
+            github: 'Available upon request',
+        },
+        'Daily Automated Counter PR': {
+            name: 'Daily Automated Counter PR (Git + GitHub Actions)',
+            description: 'Experimented with GitHub Actions by building a cron job that automatically increments a counter file and opens a daily PR. Spins up timestamped branches, commits the change, pushes to remote, and generates PRs via GitHub CLI—all completely hands-off. Mainly just wanted to see if I could get the whole workflow to run unsupervised and validate that the Actions pipeline actually triggers on each PR.',
+            github: 'Available upon request',
+        },
+        'Blackjack Simulator with Card Counting': {
+            name: 'Blackjack Simulator with Card Counting (Python)',
+            description: 'Built a blackjack game just for fun to see if I could implement basic strategy and card counting. Spun up a multi-deck shoe with proper dealer logic, hit/stand decisions, and payout rules. Added a Hi-Lo card counter that tracks the running count and feeds into strategy decisions to see if counting actually gives an edge. Wrote unit tests to validate the core mechanics—dealing, busting, payouts—and make sure the strategy layer actually works. Mostly just wanted to play around with game logic and see if card counting in code matches the theory.',
+            github: 'https://github.com/jmogen/Card_Counting',
+        },
+        'RTX Real-Time Operating System': {
+            name: 'RTX Real-Time Operating System (ARM Cortex-M3)',
+            description: 'School group project building a real-time operating system from scratch on the Keil MCB1700 Cortex-M3 platform. Implemented core kernel functionality including memory management with a from-scratch malloc, preemptive task scheduling, context switching in ARM assembly, inter-task message passing, console I/O, and real-time deadline-driven execution with timer support.',
+            github: 'Available upon request',
+        },
+        'VHDL Compiler': {
+            name: 'VHDL Compiler (Java)',
+            description: 'School project building a multi-stage compiler for VHDL in Java. Implemented a recursive descent parser with full AST construction, a boolean expression simplifier using the visitor pattern with common subexpression elimination (CSE), and code generation backends targeting x86 assembly, JVM bytecode, and a Java simulator with register allocation. Also handled VHDL-specific passes including desugaring, elaboration, and process splitting to synthesize combinational logic from behavioral descriptions.',
+            github: 'Somewhere on uwaterloo ece servers, beyond my reach',
+        },
+        'QAOA Max-Cut Optimizer (iQuHACK 2023 - Quantinuum Challenge)': {
+            name: 'QAOA Max-Cut Optimizer (iQuHACK 2023 - Quantinuum Challenge)',
+            description: 'Hackathon project at MIT\'s iQuHack 2023, tackling Quantinuum\'s quantum optimization challenge. Improved on a naive parameter-sampling implementation of QAOA (Quantum Approximate Optimization Algorithm) for the Max-Cut problem by experimenting with three optimization strategies: Basin Hopping, Nelder-Mead, and Gradient Descent. Best results came from Nelder-Mead, which achieved an 8% increase in highest energy found and a 180% decrease in average runtime compared to the baseline. None of us had touched quantum computing before that weekend.',
+            github: 'https://github.com/jmogen/Espada',
+        },
+    };
+
+    function slugify(name) {
+        return name
+            .replace(/[^\w\s-]/g, '')
+            .trim()
+            .replace(/\s+/g, '_')
+            .toLowerCase();
+    }
+
+    const PROJECT_FILES = {};
+    for (const [name, data] of Object.entries(PROJECTS)) {
+        PROJECT_FILES[`${slugify(name)}.txt`] = data;
+    }
+
+    const DIRECTORY_FILES = {
+        '/home/user': {
+            'README.md': "# Welcome to My Portfolio\n\nThis is my personal portfolio website.\nExplore the projects and skills!",
+            '.gitconfig': "[user]\n    name = Developer\n    email = dev@example.com",
+        },
+        '/home/user/projects': PROJECT_FILES,
+    };
+
+    const DIRECTORY_SUBDIRS = {
+        '/home/user': ['projects/', 'documents/', 'downloads/'],
+        '/home/user/projects': [],
+    };
+
+    const terminalState = {
+        currentDir: '/home/user',
+        loggedIn: 'user',
+    };
+
+    function getPromptRaw() {
+        return `${terminalState.loggedIn}@terminal:${terminalState.currentDir}$ `;
+    }
+
+    function cmdHelp() {
+        return `Available commands:
+  about        - Learn about me
+  ls           - List directory contents
+  pwd          - Print working directory
+  whoami       - Display current user
+  echo [text]  - Echo text
+  cat [file]   - Display file contents
+  cd [path]    - Change directory
+  uname        - System information
+  date         - Current date and time
+  clear        - Clear terminal
+  help         - Show this message
+
+  (Try: mkdir, sudo for some fun!)`;
+    }
+
+    function cmdAbout() {
+        return `Welcome to my terminal-themed portfolio!
+
+I'm a software engineer passionate about building scalable systems
+and creating innovative solutions to complex problems.
+
+This portfolio showcases my projects in a retro terminal interface.
+Feel free to explore using the available commands!
+
+Use 'cd projects' then 'ls' to see my work.`;
+    }
+
+    function cmdLs() {
+        const current = terminalState.currentDir;
+        const files = Object.keys(DIRECTORY_FILES[current] || {});
+        const subdirs = DIRECTORY_SUBDIRS[current] || [];
+        const entries = [...subdirs, ...files];
+        return entries.length ? entries.join('\r\n') : '.';
+    }
+
+    function cmdPwd() {
+        return terminalState.currentDir;
+    }
+
+    function cmdWhoami() {
+        return terminalState.loggedIn;
+    }
+
+    function cmdEcho(args) {
+        return args.length ? args.join(' ') : '';
+    }
+
+    function cmdCat(args) {
+        if (!args.length) return 'Usage: cat <filename>';
+        const filename = args[0];
+        const current = terminalState.currentDir;
+        const files = DIRECTORY_FILES[current] || {};
+
+        if (!(filename in files)) {
+            return `cat: ${filename}: No such file or directory`;
+        }
+
+        const content = files[filename];
+        if (current === '/home/user/projects') {
+            return { type: 'project', data: content };
+        }
+        return content;
+    }
+
+    function cmdCd(args) {
+        if (!args.length) {
+            terminalState.currentDir = '/home/user';
+            return '';
+        }
+        const path = args[0];
+        if (path === '/home/user' || path === '~') {
+            terminalState.currentDir = '/home/user';
+        } else if (path === '/home/user/projects' || path === 'projects') {
+            terminalState.currentDir = '/home/user/projects';
+        } else if (path === '..') {
+            terminalState.currentDir = '/home/user';
+        } else {
+            return `cd: ${path}: No such file or directory`;
+        }
+        return '';
+    }
+
+    function cmdUname() {
+        return 'Linux portfolio-terminal 5.10.0 #1 SMP x86_64 GNU/Linux';
+    }
+
+    function cmdDate() {
+        return new Date().toUTCString();
+    }
+
+    function cmdMkdir(args) {
+        if (!args.length) return 'Usage: mkdir <directory>';
+        return `Permission denied: Cannot create '${args[0]}'. This is a read-only portfolio! 🔒`;
+    }
+
+    function cmdSudo(args) {
+        if (!args.length) return 'sudo: no command specified';
+        return "sudo: nice try, but you don't have administrator privileges here! 😄";
+    }
+
+    function cmdClear() {
+        return '[CLEAR]';
+    }
+
+    const COMMANDS = {
+        help: cmdHelp,
+        ls: cmdLs,
+        pwd: cmdPwd,
+        whoami: cmdWhoami,
+        clear: cmdClear,
+        echo: cmdEcho,
+        cat: cmdCat,
+        about: cmdAbout,
+        mkdir: cmdMkdir,
+        sudo: cmdSudo,
+        cd: cmdCd,
+        uname: cmdUname,
+        date: cmdDate,
+    };
+
+    function executeCommand(commandInput) {
+        if (!commandInput.trim()) return '';
+        const parts = commandInput.trim().split(/\s+/);
+        const cmd = parts[0];
+        const args = parts.slice(1);
+
+        if (cmd in COMMANDS) {
+            return COMMANDS[cmd](args);
+        }
+        return `Command not found: ${cmd}\nType 'help' for available commands.`;
+    }
+
+    
     const term = new Terminal({
         cols: 120,
         rows: 35,
-    theme: {
-        background: '#300a24',
-        foreground: '#eeeeec',
-        cursor: '#bbbbbb',
-        selectionBackground: '#b4d5ff',
-        selectionForeground: '#300a24',
-        black: '#2e3436',
-        red: '#cc0000',
-        green: '#4e9a06',
-        yellow: '#c4a000',
-        blue: '#3465a4',
-        magenta: '#75507b',
-        cyan: '#06989a',
-        white: '#d3d7cf',
-        brightBlack: '#555753',
-        brightRed: '#ef2929',
-        brightGreen: '#8ae234',
-        brightYellow: '#fce94f',
-        brightBlue: '#729fcf',
-        brightMagenta: '#ad7fa8',
-        brightCyan: '#34e2e2',
-        brightWhite: '#eeeeec'
-    }
+        theme: {
+            background: '#300a24',
+            foreground: '#eeeeec',
+            cursor: '#bbbbbb',
+            selectionBackground: '#b4d5ff',
+            selectionForeground: '#300a24',
+            black: '#2e3436',
+            red: '#cc0000',
+            green: '#4e9a06',
+            yellow: '#c4a000',
+            blue: '#3465a4',
+            magenta: '#75507b',
+            cyan: '#06989a',
+            white: '#d3d7cf',
+            brightBlack: '#555753',
+            brightRed: '#ef2929',
+            brightGreen: '#8ae234',
+            brightYellow: '#fce94f',
+            brightBlue: '#729fcf',
+            brightMagenta: '#ad7fa8',
+            brightCyan: '#34e2e2',
+            brightWhite: '#eeeeec'
+        }
     });
     const terminalContainer = document.getElementById('terminal');
     term.open(terminalContainer);
@@ -52,10 +341,6 @@
     const webLinksAddon = new WebLinksAddon.WebLinksAddon();
     term.loadAddon(webLinksAddon);
 
-    // window.addEventListener('resize', () => {
-    //     fitAddon.fit();
-    // });
-
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
@@ -66,17 +351,17 @@
     let currentPrompt = 'user@terminal:/home/user$ ';
 
     // colors to use
-    const labelColor = '#7fd0b9';       // teal for labels
-    const valueColor = '#eeeeec';       // foreground for values
-    const promptColor = '#ad7fa8';      // magenta for prompt
-    const asciiColor = '#34e2e2';       // bright cyan fallback
+    const labelColor = '#7fd0b9';
+    const valueColor = '#eeeeec';
+    const promptColor = '#ad7fa8';
+    const asciiColor = '#34e2e2';
 
     const labelColors = {
-    'name': '7fd0b9',      // teal, matches Project label
-    'description': '7fd0b9',
-    'website': '06989a',   // cyan for links
-    'github': '06989a',
-    'demo': 'ad7fa8',      // magenta for extras
+        'name': '7fd0b9',
+        'description': '7fd0b9',
+        'website': '06989a',
+        'github': '06989a',
+        'demo': 'ad7fa8',
     };
 
     const displayLabel = {
@@ -95,7 +380,7 @@
             const coloredLabel = colorText(`${label}:`, hex);
 
             if (key === 'name') {
-                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`); // bold project title
+                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`);
             } else if (key === 'website' || key === 'github') {
                 lines.push(`${coloredLabel} ${colorText(value, '06989a')}`);
             } else {
@@ -113,7 +398,6 @@
         term.write(normalized);
     }
 
-    // Initialize terminal and show neofetch-style system info
     term.write('\r\n');
 
     function detectBrowser() {
@@ -121,45 +405,21 @@
 
         if (/Edg\//i.test(ua)) {
             const match = ua.match(/Edg\/(\d+(?:\.\d+)*)/i);
-            return {
-                key: 'edge',
-                name: 'Edge',
-                version: match ? match[1] : '',
-            };
+            return { key: 'edge', name: 'Edge', version: match ? match[1] : '' };
         }
-
         if (/Firefox\//i.test(ua)) {
             const match = ua.match(/Firefox\/(\d+(?:\.\d+)*)/i);
-            return {
-                key: 'firefox',
-                name: 'Firefox',
-                version: match ? match[1] : '',
-            };
+            return { key: 'firefox', name: 'Firefox', version: match ? match[1] : '' };
         }
-
         if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) {
             const match = ua.match(/Chrome\/(\d+(?:\.\d+)*)/i);
-            return {
-                key: 'chrome',
-                name: 'Chrome',
-                version: match ? match[1] : '',
-            };
+            return { key: 'chrome', name: 'Chrome', version: match ? match[1] : '' };
         }
-
         if (/Safari\//i.test(ua) && /Version\//i.test(ua)) {
             const match = ua.match(/Version\/(\d+(?:\.\d+)*)/i);
-            return {
-                key: 'safari',
-                name: 'Safari',
-                version: match ? match[1] : '',
-            };
+            return { key: 'safari', name: 'Safari', version: match ? match[1] : '' };
         }
-
-        return {
-            key: 'generic',
-            name: 'Unknown',
-            version: '',
-        };
+        return { key: 'generic', name: 'Unknown', version: '' };
     }
 
     const browser = detectBrowser();
@@ -267,11 +527,7 @@
         ],
     };
 
-    // Per-character color grids, sampled directly from reference logo images.
-    // Each entry is a 2D array aligned to the matching browserAscii art:
-    // grid[row][col] is a hex string or null (null = use fallback row/palette color).
-    // Only browsers with a supplied reference image get a real grid; others
-    // fall back to browserColorPalettes below.
+
     const browserColorGrids = {
         chrome: [[null, null, null, null, null, null, null, null, "#dd4e42", "#dd4d41", "#dd4d40", "#dd4c40", "#dc4b3e", null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", null, null, null, null, null, null, null], [null, null, null, "#d85144", "#de5448", "#de5347", "#de5347", "#de5246", "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", "#dd4d40", "#dd4c40", "#dc4b3e", "#dc493c", "#dc493c", null, null], [null, null, null, "#d44f42", "#da5044", "#de5246", "#de5347", "#de5246", "#de5145", "#de5145", "#dd4f43", "#dd4e42", "#dd4e41", "#dd4d40", "#dd4c40", "#dc4b3e", "#dc493c", "#dc493c", null, null], [null, "#c9483a", "#cd493c", "#cf4a3c", "#da5044", "#de5347", "#de5246", "#de5145", "#de5145", "#dd5044", "#e0a138", "#e3a539", "#e3a539", "#e8aa38", "#ebad39", "#f0b239", "#f4b539", "#fcbc3a", "#fcbc3a", "#f2c242"], ["#1fa463", "#22a565", "#cb493b", "#d34c3e", "#d34c3e", "#d84f42", "#de5145", "#de5145", "#4e8df5", "#4b8bf5", "#498af4", "#4889f4", "#e5a839", "#ebad39", "#fcbc3a", "#fcbc3a", "#fcbc3a", "#fcbc3a", "#fcbc3a", "#fcbc3a"], ["#1ba261", "#22a565", "#22a565", "#cb493b", "#d34c3e", "#d84f42", "#dc4b3e", "#4b8bf5", "#4c8cf5", "#4d8cf5", "#4c8cf5", "#4889f4", "#4889f4", "#f7b839", "#fcbc3a", "#fcbc3a", "#fdc13c", "#fdc13c", "#fdc13c", "#fdc13c"], ["#1da362", "#20a464", "#20a464", "#bb4335", "#cf4a3c", "#d34c3e", "#498af4", "#4d8cf5", "#4d8cf5", "#4c8cf5", "#4c8cf5", "#4b8bf5", "#4889f4", "#edb23b", "#fdc23f", "#fec63f", "#fec63f", "#fec63f", "#fec63f", "#fec63f"], ["#17a05d", "#1fa463", "#1fa463", "#1da362", "#c14334", "#cf4a3c", "#4b8bf5", "#4d8cf5", "#4c8cf5", "#4c8cf5", "#4b8bf5", "#4b8bf5", "#498af4", "#4889f4", "#fec641", "#ffcc43", "#ffcc43", "#ffcc43", "#ffce42", "#ffcd40"], ["#19a15f", "#1da362", "#1fa463", "#1fa463", "#c14334", "#c9483a", "#4b8bf5", "#4c8cf5", "#4c8cf5", "#4b8bf5", "#4b8bf5", "#498af4", "#498af4", "#4889f4", "#ffcd44", "#ffcd44", "#ffcd44", "#ffce43", "#ffce42", "#ffcd40"], ["#1da362", "#1da362", "#1da362", "#1da362", "#1ba261", "#c9483a", "#498af4", "#4c8cf5", "#4b8bf5", "#4b8bf5", "#4b8bf5", "#498af4", "#498af4", "#4889f4", "#ffcd44", "#ffcd44", "#ffce44", "#ffce43", "#ffcd41", "#ffcd40"], ["#19a15f", "#1ba261", "#1ba261", "#1ba261", "#1ba261", "#1aa260", "#4b8bf5", "#498af4", "#4b8bf5", "#498af4", "#498af4", "#498af4", "#4889f4", "#4889f4", "#fec940", "#ffcd44", "#ffce43", "#ffce42", "#ffcd41", "#ffcd40"], ["#1aa260", "#1aa260", "#1aa260", "#1aa260", "#1aa260", "#1aa260", "#18a15f", "#4889f4", "#4889f4", "#498af4", "#498af4", "#4889f4", "#4889f4", "#ffcd41", "#ffcd44", "#ffce43", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40"], ["#17a05e", "#1aa260", "#1aa260", "#1aa260", "#1aa260", "#18a15f", "#18a15f", "#18a15f", "#4889f4", "#498af4", "#4889f4", "#4889f4", "#ffce42", "#ffcd41", "#ffce43", "#ffce42", "#ffce42", "#ffcd41", "#ffcd40", "#ffcd40"], ["#21995d", "#17a05e", "#18a15f", "#18a15f", "#18a15f", "#18a15f", "#18a15f", "#18a15f", "#159f5c", "#16a05d", "#149f5b", "#1d9b5d", "#ffcd41", "#ffce43", "#ffce43", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40", "#f2c242"], [null, "#159f5c", "#16a05d", "#18a15f", "#18a15f", "#17a05e", "#17a05e", "#16a05d", "#16a05d", "#149f5b", "#149f5b", "#ffcd40", "#ffcd40", "#ffce42", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40", "#ffcd40", null], [null, null, null, "#16a05d", "#16a05d", "#16a05d", "#16a05d", "#16a05d", "#16a05d", "#149f5b", "#139d5a", "#ffcd40", "#ffce42", "#ffce42", "#ffcd41", "#ffcd41", "#ffcd40", "#ffcd40", null, null], [null, null, null, "#16a05d", "#149f5b", "#16a05d", "#149f5b", "#149f5b", "#149f5b", "#149f5b", "#ffcd40", "#ffcd40", "#ffcd41", "#ffcd41", "#ffcd41", "#ffcd40", "#ffcd40", null, null, null], [null, null, null, null, null, null, null, null, "#139f5b", "#139b58", "#ffcd40", "#ffcd41", "#ffcd41", null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null, "#139f5b", "#ffcd40", "#ffcd40", "#ffcd41", "#ffcd40", null, null, null, null, null, null, null]],
         edge: [[null, null, null, null, null, null, "#33c1ee", "#33c1ee", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3ce", "#107eba", "#1088ce", null, null, null, null, null, null], [null, null, null, null, null, null, "#30c2e6", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#107eba", "#1088ce", null, null, null, null, null, null], [null, null, null, null, "#33c1ee", "#33c1ee", "#33c1ee", "#33c1ee", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3ce", "#31c7b8", "#32c798", "#32c798", "#38c9a0", null, null], [null, null, null, null, "#33c1ee", "#33c1ee", "#33c1ee", "#33c1ee", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3d6", "#31c7b8", "#40d09f", "#40d09f", "#38c9a0", null, null], [null, null, "#33c1ee", "#33c1ee", "#33c1ee", "#0e8edc", "#0e8edc", "#0e8edc", "#30c2e6", "#30c2e6", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3d6", "#31c7b8", "#40d09f", "#48d590", "#51dc71", "#38c9a0", null], [null, null, "#0e8edc", "#0e8edc", "#0e8edc", "#0e8edc", "#1088ce", "#0e8edc", "#1088ce", "#1088ce", "#2dc2df", "#2dc2df", "#2bc3d6", "#2bc3d6", "#31c7b8", "#40d09f", "#48d590", "#52dc82", "#38c9a0", "#38c9a0"], ["#33c1ee", "#0e8edc", "#0e8edc", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0e8edc", "#0e8edc", "#1088ce", "#1088ce", "#2bc3d6", "#2bc3d6", "#2bc3ce", "#31c7b8", "#40d09f", "#44d27d", "#51dc71", "#5de474", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0e8edc", "#0e8edc", "#0e8edc", "#0e8edc", "#1088ce", "#1088ce", "#107eba", "#2dc4c3", "#32c798", "#32c798", "#44d27d", "#51dc71", "#42cf5c", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0783d8", "#0783d8", "#0e8edc", "#0e8edc", "#0e8edc", "#0e8edc", "#1088ce", "#1088ce", "#1088ce", "#107eba", "#32c798", "#33c885", "#44d27d", "#44d27d", "#42cf5c", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0783d8", "#0783d8", "#037cd5", "#0e8edc", null, null, null, null, "#0b7ec6", "#107eba", "#32c798", "#33c885", "#44d27d", "#44d27d", "#44d27d", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0783d8", "#037cd5", "#0a64ae", null, null, null, null, "#0b7ec6", "#0c70a7", "#33c885", "#33c885", "#33c873", "#33c873", "#44d27d", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0783d8", "#0a64ae", null, null, null, null, "#0c70a7", "#0c70a7", "#33c885", "#33c873", "#33c873", "#33c873", "#47d469", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0b549d", "#0874b8", null, null, null, null, "#33c873", "#33c873", "#33c873", "#33c873", "#33c873", "#33c864", "#38c9a0", "#38c9a0"], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0874b8", null, null, null, null, "#33c873", "#33c864", "#33c864", "#33c864", "#37c855", "#37c855", null, null], ["#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0874b8", "#0a64ae", "#0a64ae", null, null, null, null, null, null, null, null, null, null], ["#2095ac", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0874b8", "#0c70a7", "#0a64ae", null, null, null, null, null, null, null, null, null, null], [null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0c70a7", "#0874b8", "#0c70a7", "#0b549d", "#0b549d", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", "#0a64ae", null, null], [null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0874b8", "#0c70a7", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0c5196", "#0c5196", "#0e4d90", "#0a64ae", null, null], [null, null, null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0c70a7", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0c5196", "#0a64ae", null, null, null, null], [null, null, null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0b549d", "#0a64ae", "#0a64ae", null, null, null, null], [null, null, null, null, null, null, "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#037cd5", "#0a64ae", null, null, null, null, null, null]],
@@ -282,37 +538,27 @@
     const ascii = browserAscii[browser.key] || browserAscii.generic;
     const colorGrid = browserColorGrids[browser.key] || null;
 
-    // System info lines (will align with ASCII on the right)
     const hostname = 'user@portfolio';
     const separator = '-'.repeat(hostname.length);
     const ramInfo = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'unknown';
     const cpuInfo = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'unknown';
 
-    // Create color palette string
     const colors = [
         '#000000', '#dd0000', '#00dd00', '#dddd00',
         '#0000dd', '#dd00dd', '#00dddd', '#cccccc'
     ];
     const colorLine = colors.map(c => `\x1b[48;2;${parseInt(c.slice(1,3),16)};${parseInt(c.slice(3,5),16)};${parseInt(c.slice(5,7),16)}m  \x1b[0m`).join('');
 
-    // helper: convert hex to rgb
     function hexToRgb(hex) {
         const h = hex.replace('#','');
         return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
     }
 
-    // helper: wrap text with truecolor ANSI foreground (reset after)
     function colorText(text, hex) {
         const [r,g,b] = hexToRgb(hex);
         return `\x1b[38;2;${r};${g};${b}m${text}\x1b[0m`;
     }
 
-    // Density-based color gradients using each browser's real brand hues.
-    // Characters are ranked light -> dark by typical ink density, then mapped
-    // onto a brand color gradient at that same position. This isn't pixel-
-    // sampled like Firefox's colorGrid (no reference image yet for these),
-    // but it's driven by the actual brand colors instead of a guess per row,
-    // so the shading follows the art's real density pattern.
     const DENSITY_ORDER = [',', '.', ':', ';', '+', '?', '*', 'S', '%', '#', '@'];
 
     const browserGradients = {
@@ -331,13 +577,8 @@
         return gradient[idx];
     }
 
-    // Longest line in the active art sets the padding width so the info
-    // column still aligns even though rows are different lengths.
     const asciiWidth = Math.max(...ascii.map(l => l.length));
 
-    // prepare colored ascii, per character:
-    // 1. real pixel-sampled colorGrid, if we have a reference image for this browser (Firefox)
-    // 2. brand-hue density gradient otherwise (Chrome, Edge, Safari, generic)
     const asciiColored = ascii.map((line, ri) => {
         const padded = (line || '').padEnd(asciiWidth);
         let out = '';
@@ -404,60 +645,58 @@
             term.write(asciiLine + gap + infoLine + '\r\n');
         }
 
-        // term.write('\r\n');
         term.write('\r\nType "help" for available commands\r\n\r\n');
-        
-        // Color the prompt HERE, every time the banner renders
+
         const coloredPrompt = colorText(currentPrompt, promptColor);
         term.write(coloredPrompt);
     }
-    async function handleTabComplete() {
+
+    
+    function handleTabComplete() {
         const parts = command.split(' ');
         const isFirstWord = parts.length === 1;
 
-        try {
-            const res = await fetch('/api/autocomplete');
-            const data = await res.json();
+        const current = terminalState.currentDir;
+        const files = Object.keys(DIRECTORY_FILES[current] || {});
+        const dirs = (DIRECTORY_SUBDIRS[current] || []).map(d => d.replace(/\/$/, ''));
+        const commandNames = Object.keys(COMMANDS);
 
-            let candidates;
-            if (isFirstWord) {
-                candidates = data.commands;
-            } else {
-                const cmdWord = parts[0];
-                candidates = (cmdWord === 'cd') ? data.dirs : [...data.files, ...data.dirs];
+        let candidates;
+        if (isFirstWord) {
+            candidates = commandNames;
+        } else {
+            const cmdWord = parts[0];
+            candidates = (cmdWord === 'cd') ? dirs : [...files, ...dirs];
+        }
+
+        const currentArg = parts[parts.length - 1];
+        const matches = candidates.filter(c => c.startsWith(currentArg));
+
+        if (matches.length === 1) {
+            const completion = matches[0].slice(currentArg.length);
+            term.write(completion);
+            command += completion;
+        } else if (matches.length > 1) {
+            let prefix = matches[0];
+            for (const m of matches) {
+                let i = 0;
+                while (i < prefix.length && i < m.length && prefix[i] === m[i]) i++;
+                prefix = prefix.slice(0, i);
             }
-
-            const currentArg = parts[parts.length - 1];
-            const matches = candidates.filter(c => c.startsWith(currentArg));
-
-            if (matches.length === 1) {
-                const completion = matches[0].slice(currentArg.length);
+            const completion = prefix.slice(currentArg.length);
+            if (completion) {
                 term.write(completion);
                 command += completion;
-            } else if (matches.length > 1) {
-                // Find longest common prefix among matches
-                let prefix = matches[0];
-                for (const m of matches) {
-                    let i = 0;
-                    while (i < prefix.length && i < m.length && prefix[i] === m[i]) i++;
-                    prefix = prefix.slice(0, i);
-                }
-                const completion = prefix.slice(currentArg.length);
-                if (completion) {
-                    term.write(completion);
-                    command += completion;
-                } else {
-                    term.write('\r\n' + matches.join('  ') + '\r\n' + currentPrompt + command);
-                }
+            } else {
+                term.write('\r\n' + matches.join('  ') + '\r\n' + currentPrompt + command);
             }
-        } catch (err) {
-            console.error('Autocomplete error', err);
         }
     }
 
+    
     async function loadIp() {
         try {
-            const res = await fetch('/api/ip');
+            const res = await fetch('https://api.ipify.org?format=json');
             const data = await res.json();
             currentIp = data.ip || 'unknown';
         } catch {
@@ -466,102 +705,83 @@
         renderBanner();
     }
 
-    // renderBanner();
     loadIp();
 
-    // term.write('\r\n');
-    // term.write('\r\nType "help" for available commands\r\n\r\n');
-    // term.write(currentPrompt);
-
     let commandHistory = [];
-let historyIndex = -1;
+    let historyIndex = -1;
 
-term.onData(e => {
-    if (e === '\r') {
-        if (command.trim()) {
-            commandHistory.push(command.trim());
-            historyIndex = commandHistory.length;
-        }
-        term.write('\r\n');
-        if (command.trim()) {
-            handleCommand(command.trim());
-        } else {
+    term.onData(e => {
+        if (e === '\r') {
+            if (command.trim()) {
+                commandHistory.push(command.trim());
+                historyIndex = commandHistory.length;
+            }
+            term.write('\r\n');
+            if (command.trim()) {
+                handleCommand(command.trim());
+            } else {
+                term.write(currentPrompt);
+            }
+            command = '';
+        } else if (e === '\u007F') {
+            if (command.length > 0) {
+                term.write('\b \b');
+                command = command.slice(0, -1);
+            }
+        } else if (e === '\u0003') {
+            term.write('^C\r\n');
             term.write(currentPrompt);
+            command = '';
+        } else if (e === '\u0004') {
+            term.write('\r\n');
+            term.write('Goodbye!');
+        } else if (e === '\x1b[A') {
+            if (historyIndex > 0) {
+                historyIndex--;
+                replaceCommandLine(commandHistory[historyIndex]);
+            }
+        } else if (e === '\x1b[B') {
+            if (historyIndex < commandHistory.length - 1) {
+                historyIndex++;
+                replaceCommandLine(commandHistory[historyIndex]);
+            } else {
+                historyIndex = commandHistory.length;
+                replaceCommandLine('');
+            }
+        } else if (e === '\t') {
+            handleTabComplete();
+        } else if (e >= String.fromCharCode(32) && e <= String.fromCharCode(126)) {
+            term.write(e);
+            command += e;
         }
-        command = '';
-    } else if (e === '\u007F') { // Backspace
-        if (command.length > 0) {
-            term.write('\b \b');
-            command = command.slice(0, -1);
-        }
-    } else if (e === '\u0003') { // Ctrl+C
-        term.write('^C\r\n');
-        term.write(currentPrompt);
-        command = '';
-    } else if (e === '\u0004') { // Ctrl+D
-        term.write('\r\n');
-        term.write('Goodbye!');
-    } else if (e === '\x1b[A') { // Arrow Up
-        if (historyIndex > 0) {
-            historyIndex--;
-            replaceCommandLine(commandHistory[historyIndex]);
-        }
-    } else if (e === '\x1b[B') { // Arrow Down
-        if (historyIndex < commandHistory.length - 1) {
-            historyIndex++;
-            replaceCommandLine(commandHistory[historyIndex]);
-        } else {
-            historyIndex = commandHistory.length;
-            replaceCommandLine('');
-        }
-    } else if (e === '\t') { // Tab
-        handleTabComplete();
-    } else if (e >= String.fromCharCode(32) && e <= String.fromCharCode(126)) {
-        term.write(e);
-        command += e;
-    }
-});
+    });
 
     function replaceCommandLine(newCommand) {
-        // Clear current line content visually
         term.write('\b \b'.repeat(command.length));
         term.write(newCommand);
         command = newCommand;
     }
 
+    
     function handleCommand(input) {
-        // Send command to backend
-        fetch('/api/execute', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ command: input })
-        })
-        .then(response => response.json())
-        .then(data => {
-            const output = data.output;
-            const prompt = data.prompt;
-            currentPrompt = colorText(prompt, promptColor);
-
-            if (output === '[CLEAR]') {
-                term.clear();
-                term.write(currentPrompt);
-            } else if (output && typeof output === 'object' && output.type === 'project') {
-                term.write(renderProject(output.data));
-                term.write('\r\n');
-                term.write(currentPrompt);
-            } else {
-                if (output) writeTerminalOutput(output);
-                term.write('\r\n');
-                term.write(currentPrompt);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            term.write('Error executing command\r\n');
+        const output = executeCommand(input);
+        const prompt = getPromptRaw();
+        currentPrompt = colorText(prompt, promptColor);
+        if (output === '[CLEAR]') {
+            term.clear();
             term.write(currentPrompt);
-        });
+            return;
+        }
+       if (output && typeof output === 'object' && output.type === 'project') {
+        term.write(renderProject(output.data));
+        term.write('\r\n\r\n'); // end output line + blank line
+        } else if (output) {
+            writeTerminalOutput(output);
+            term.write('\r\n\r\n'); // end output line + blank line
+        } else {
+            term.write('\r\n'); // just the blank line, no output line to end
+        }
+        term.write(currentPrompt);
     }
     </script>
 </body>
