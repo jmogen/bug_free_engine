@@ -150,13 +150,13 @@
     const DIRECTORY_FILES = {
         '/home/user': {
             'README.md': "# Welcome to My Portfolio\n\nThis is my personal portfolio website.\nExplore the projects and skills!",
-            '.gitconfig': "[user]\n    name = Developer\n    email = dev@example.com",
+            
         },
         '/home/user/projects': PROJECT_FILES,
     };
 
     const DIRECTORY_SUBDIRS = {
-        '/home/user': ['projects/', 'documents/', 'downloads/'],
+        '/home/user': ['projects',],
         '/home/user/projects': [],
     };
 
@@ -202,7 +202,8 @@ Use 'cd projects' then 'ls' to see my work.`;
         const current = terminalState.currentDir;
         const files = Object.keys(DIRECTORY_FILES[current] || {});
         const subdirs = DIRECTORY_SUBDIRS[current] || [];
-        const entries = [...subdirs, ...files];
+        const coloredDirs = subdirs.map(d => `\x1b[1m${colorText(d, '3465a4')}\x1b[0m`);
+        const entries = [...coloredDirs, ...files];
         return entries.length ? entries.join('\r\n') : '.';
     }
 
@@ -236,21 +237,34 @@ Use 'cd projects' then 'ls' to see my work.`;
     }
 
     function cmdCd(args) {
-        if (!args.length) {
+        if (!args.length || args[0] === '~') {
             terminalState.currentDir = '/home/user';
             return '';
         }
         const path = args[0];
-        if (path === '/home/user' || path === '~') {
-            terminalState.currentDir = '/home/user';
-        } else if (path === '/home/user/projects' || path === 'projects') {
-            terminalState.currentDir = '/home/user/projects';
-        } else if (path === '..') {
-            terminalState.currentDir = '/home/user';
-        } else {
-            return `cd: ${path}: No such file or directory`;
+        const current = terminalState.currentDir;
+        if (path === '..') {
+            if (current === '/home/user') {
+                return '';
+            }
+            const parts = current.split('/').filter(Boolean);
+            parts.pop();
+            terminalState.currentDir = '/' + parts.join('/');
+            return '';
         }
-        return '';
+        if (path === '.') {
+            return '';
+        }
+        const validSubdirs = (DIRECTORY_SUBDIRS[current] || []).map(d => d.replace(/\/$/, ''));
+        if (validSubdirs.includes(path)) {
+            terminalState.currentDir = `${current}/${path}`;
+            return '';
+        }
+        if (path.startsWith('/') && DIRECTORY_SUBDIRS[path] !== undefined) {
+            terminalState.currentDir = path;
+            return '';
+        }
+        return `cd: ${path}: No such file or directory`;
     }
 
     function cmdUname() {
@@ -263,12 +277,12 @@ Use 'cd projects' then 'ls' to see my work.`;
 
     function cmdMkdir(args) {
         if (!args.length) return 'Usage: mkdir <directory>';
-        return `Permission denied: Cannot create '${args[0]}'. This is a read-only portfolio! 🔒`;
+        return `Permission denied: Cannot create '${args[0]}'. This is a read-only portfolio!`;
     }
 
     function cmdSudo(args) {
         if (!args.length) return 'sudo: no command specified';
-        return "sudo: nice try, but you don't have administrator privileges here! 😄";
+        return "sudo: nice try, but you don't have administrator privileges here!";
     }
 
     function cmdClear() {
@@ -347,14 +361,16 @@ Use 'cd projects' then 'ls' to see my work.`;
         resizeTimeout = setTimeout(() => fitAddon.fit(), 100);
     });
 
-    let command = '';
-    let currentPrompt = 'user@terminal:/home/user$ ';
-
+    // let currentPrompt = 'user@terminal:/home/user$ ';
+    
     // colors to use
     const labelColor = '#7fd0b9';
     const valueColor = '#eeeeec';
     const promptColor = '#ad7fa8';
     const asciiColor = '#34e2e2';
+    
+    let command = '';
+    let currentPrompt = colorText("user@terminal:~/home/user$ ", promptColor);
 
     const labelColors = {
         'name': '7fd0b9',
@@ -613,7 +629,8 @@ Use 'cd projects' then 'ls' to see my work.`;
             ['CPU', cpuInfo],
             ['Terminal', 'xterm.js'],
             ['Uptime', 'Always on'],
-            ['IP', ipText],
+            ['IP', currentIp],
+            ['Location', currentLocation]
         ];
     }
 
@@ -694,13 +711,23 @@ Use 'cd projects' then 'ls' to see my work.`;
     }
 
     
+    // let currentIp = 'fetching...';
+    let currentLocation = 'fetching...';
+
     async function loadIp() {
         try {
             const res = await fetch('https://api.ipify.org?format=json');
             const data = await res.json();
             currentIp = data.ip || 'unknown';
+
+            const geoRes = await fetch(`https://ipapi.co/${currentIp}/json/`);
+            const geoData = await geoRes.json();
+            currentLocation = geoData.city && geoData.country_name
+                ? `${geoData.city}, ${geoData.region}, ${geoData.country_name}`
+                : 'unknown';
         } catch {
             currentIp = 'unavailable';
+            currentLocation = 'unknown';
         }
         renderBanner();
     }
@@ -729,7 +756,7 @@ Use 'cd projects' then 'ls' to see my work.`;
                 command = command.slice(0, -1);
             }
         } else if (e === '\u0003') {
-            term.write('^C\r\n');
+            term.write('^C\r\n\r\n');
             term.write(currentPrompt);
             command = '';
         } else if (e === '\u0004') {
