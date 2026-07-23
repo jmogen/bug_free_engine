@@ -4,8 +4,9 @@
     box-sizing: border-box;
 }
 
+
 body {
-    background: linear-gradient(135deg, #300a24 0%, #1d0716 100%);
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-bg-dark) 100%);
     font-family: 'Courier New', monospace;
     display: flex;
     justify-content: center;
@@ -15,22 +16,21 @@ body {
     overflow: hidden;
 }
 
+
 .terminal-container {
     width: 100%;
     max-width: none;
     height: 100vh;
-    background: #300a24;
-    /* border: 2px solid #eeeeec; */
-    /* border-radius: 8px; */
-    /* box-shadow: 0 0 20px rgba(238, 238, 236, 0.12), inset 0 0 10px rgba(0, 0, 0, 0.5); */
+    background: var(--theme-bg);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
+
 .terminal-header {
-    background: linear-gradient(to right, #4b1037, #300a24);
-    border-bottom: 1px solid #eeeeec;
+    background: linear-gradient(to right, var(--theme-header-accent), var(--theme-bg));
+    border-bottom: 1px solid var(--theme-fg);
     padding: 8px 15px;
     display: flex;
     justify-content: space-between;
@@ -38,43 +38,49 @@ body {
     user-select: none;
 }
 
+
 .terminal-title {
-    color: #eeeeec;
+    color: var(--theme-fg);
     font-weight: bold;
     font-size: 14px;
     letter-spacing: 2px;
 }
+
 
 .terminal-buttons {
     display: flex;
     gap: 8px;
 }
 
+
 .button {
     width: 20px;
     height: 20px;
-    border: 1px solid #eeeeec;
+    border: 1px solid var(--theme-fg);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #eeeeec;
+    color: var(--theme-fg);
     font-size: 12px;
     border-radius: 2px;
     transition: all 0.2s;
 }
 
+
 .button:hover {
-    background: #eeeeec;
-    color: #300a24;
+    background: var(--theme-fg);
+    color: var(--theme-bg);
     box-shadow: 0 0 10px rgba(238, 238, 236, 0.45);
 }
 
+
 .button.close:hover {
-    background: #dd0000;
-    border-color: #dd0000;
-    color: #eeeeec;
+    background: var(--theme-red);
+    border-color: var(--theme-red);
+    color: var(--theme-fg);
 }
+
 
 #terminal {
     width: 100%;
@@ -83,57 +89,61 @@ body {
     overflow: auto;
     /* remove left padding so text is anchored to the left */
     padding: 10px 0 10px 0;
-    background: #300a24;
+    background: var(--theme-bg);
 }
+
 
 /* Custom xterm styling */
 .xterm {
-    color: #eeeeec;
-    background-color: #300a24;
+    color: var(--theme-fg);
+    background-color: var(--theme-bg);
 }
+
 
 .xterm-cursor-layer {
     display: none !important;
 }
 
+
 .xterm-cursor-block {
-    color: #300a24;
-    background: #bbbbbb !important;
+    color: var(--theme-bg);
+    background: var(--theme-cursor) !important;
 }
 
-.xterm .xterm-screen {
-    background: #300a24;
-}
 
+.xterm .xterm-screen,
 .xterm .xterm-viewport {
-    background: #300a24;
+    background: var(--theme-bg);
 }
 
+
+.xterm .xterm-selection,
 .xterm .xterm-selection div {
-    background-color: rgba(180, 213, 255, 0.35) !important;
+    background-color: var(--theme-selection) !important;
 }
 
-.xterm .xterm-selection {
-    background-color: rgba(180, 213, 255, 0.35) !important;
-}
 
 /* Scrollbar styling */
 #terminal::-webkit-scrollbar {
     width: 10px;
 }
 
+
 #terminal::-webkit-scrollbar-track {
-    background: #300a24;
+    background: var(--theme-bg);
 }
 
+
 #terminal::-webkit-scrollbar-thumb {
-    background: #eeeeec;
+    background: var(--theme-fg);
     border-radius: 5px;
 }
 
+
 #terminal::-webkit-scrollbar-thumb:hover {
-    background: #d3d7cf;
+    background: var(--theme-white);
 }
+
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -143,7 +153,7 @@ body {
         border-radius: 0;
         border: none;
     }
-    
+
     .xterm {
         font-size: 12px !important;
     }
@@ -154,26 +164,17 @@ body {
     }
 }
 
-/* Theme reference colors used by the terminal palette */
+
+/* Theme reference colors — DEFAULT/FALLBACK values only.
+   JS overwrites these at runtime from the THEME object,
+   so editing THEME in JS is the only place you need to change colors going forward. */
 :root {
-    --theme-bg: #300a24;
-    --theme-fg: #eeeeec;
-    --theme-cursor: #bbbbbb;
-    --theme-selection: #b4d5ff;
-    --theme-black: #2e3436;
-    --theme-red: #cc0000;
-    --theme-green: #4e9a06;
-    --theme-yellow: #c4a000;
-    --theme-blue: #3465a4;
-    --theme-magenta: #75507b;
-    --theme-cyan: #06989a;
-    --theme-white: #d3d7cf;
-    --theme-bright-black: #555753;
-    --theme-bright-red: #ef2929;
-    --theme-bright-green: #8ae234;
-    --theme-bright-yellow: #fce94f;
-    --theme-bright-blue: #729fcf;
-    --theme-bright-magenta: #ad7fa8;
-    --theme-bright-cyan: #34e2e2;
-    --theme-bright-white: #eeeeec;
+    --theme-bg: #001e26;
+    --theme-bg-dark: #001016;
+    --theme-header-accent: #003747;
+    --theme-fg: #9bc1c2;
+    --theme-cursor: #f34a00;
+    --theme-selection: rgba(0, 55, 71, 0.55);
+    --theme-red: #d01b24;
+    --theme-white: #e9e2cb;
 }
