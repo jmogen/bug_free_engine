@@ -16,7 +16,7 @@
     </div>
     <script>
     const PROJECTS = {
-        'Fretless Minds — AI-Powered Robotic Ukulele': {
+        'AI-Powered Robotic Ukulele': {
         name: 'Fretless Minds — AI-Powered Robotic Ukulele (ECE Capstone Project)',
         description: 'Group capstone project that takes a natural language text prompt, generates sheet music using a locally-run transformer model, and physically plays it on a ukulele in under 45 seconds. The hardware uses four SG90 servo motors for strumming and eight linear solenoids for fretting, all mounted on custom 3D-printed housings and controlled via an Arduino over serial. The software layer is a Python REST API that parses AI-generated ABC notation into hardware commands using music21, with a Flutter frontend for mobile input. My contribution was the hardware assembly and system integration, coordinating the software and hardware subsystems into a working prototype.',
         website: 'https://uwaterloo.ca/capstone-design/project-abstracts/2026-capstone-design-projects/2026-electrical-and-computer-engineering-capstone-designs#58',
@@ -127,7 +127,7 @@
             description: 'School project building a multi-stage compiler for VHDL in Java. Implemented a recursive descent parser with full AST construction, a boolean expression simplifier using the visitor pattern with common subexpression elimination (CSE), and code generation backends targeting x86 assembly, JVM bytecode, and a Java simulator with register allocation. Also handled VHDL-specific passes including desugaring, elaboration, and process splitting to synthesize combinational logic from behavioral descriptions.',
             github: 'Somewhere on uwaterloo ece servers, beyond my reach',
         },
-        'QAOA Max-Cut Optimizer (iQuHACK 2023 - Quantinuum Challenge)': {
+        'iQuHACK 2023 Quantinuum Challenge': {
             name: 'QAOA Max-Cut Optimizer (iQuHACK 2023 - Quantinuum Challenge)',
             description: 'Hackathon project at MIT\'s iQuHack 2023, tackling Quantinuum\'s quantum optimization challenge. Improved on a naive parameter-sampling implementation of QAOA (Quantum Approximate Optimization Algorithm) for the Max-Cut problem by experimenting with three optimization strategies: Basin Hopping, Nelder-Mead, and Gradient Descent. Best results came from Nelder-Mead, which achieved an 8% increase in highest energy found and a 180% decrease in average runtime compared to the baseline. None of us had touched quantum computing before that weekend.',
             github: 'https://github.com/jmogen/Espada',
@@ -209,13 +209,48 @@ Feel free to explore using the available commands!
 Use 'cd projects' then 'ls' to see my work.`;
     }
 
-    function cmdLs() {
+
+    function formatColumns(entries, terminalWidth) {
+        if (!entries.length) return '.';
+
+        const plainLengths = entries.map(e => stripAnsi(e).length);
+        const maxLen = Math.max(...plainLengths) + 2; // 2 spaces padding between columns
+        const numCols = Math.max(1, Math.floor(terminalWidth / maxLen));
+        const numRows = Math.ceil(entries.length / numCols);
+
+        const columns = [];
+        for (let col = 0; col < numCols; col++) {
+            columns.push(entries.slice(col * numRows, (col + 1) * numRows));
+        }
+
+        const rows = [];
+        for (let row = 0; row < numRows; row++) {
+            let line = '';
+            for (let col = 0; col < numCols; col++) {
+                const entry = columns[col][row];
+                if (entry === undefined) continue;
+                const plainLen = stripAnsi(entry).length;
+                const padding = ' '.repeat(maxLen - plainLen);
+                line += entry + padding;
+            }
+            rows.push(line.trimEnd());
+        }
+        return rows.join('\n');
+    }
+
+    function stripAnsi(text) {
+        return text.replace(/\x1b\[[0-9;]*m/g, '');
+    }
+
+    function cmdLs(args) {
         const current = terminalState.currentDir;
         const files = Object.keys(DIRECTORY_FILES[current] || {});
         const subdirs = DIRECTORY_SUBDIRS[current] || [];
+
         const coloredDirs = subdirs.map(d => `\x1b[1m${colorText(d, dirColor)}\x1b[0m`);
         const entries = [...coloredDirs, ...files];
-        return entries.length ? entries.join('\r\n') : '.';
+
+        return formatColumns(entries, term.cols);
     }
 
     function cmdPwd() {
@@ -334,7 +369,7 @@ Use 'cd projects' then 'ls' to see my work.`;
     const THEME = {
         background: '#001e26',
         foreground: '#9bc1c2',
-        cursor: '#f34a00',
+        cursor: '#9bc1c2',
         selectionBackground: '#003747',
         selectionForeground: '#001e26',
         black: '#002731', brightBlack: '#006388',
@@ -356,10 +391,18 @@ Use 'cd projects' then 'ls' to see my work.`;
     document.documentElement.style.setProperty('--theme-red', THEME.red);
     document.documentElement.style.setProperty('--theme-white', THEME.white);
     
+    function hexToRgb(hex) {
+        const h = hex.replace('#', '');
+        return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+    }
+
+    const [r, g, b] = hexToRgb(THEME.background);
+    document.documentElement.style.setProperty('--theme-bg-translucent', `rgba(${r}, ${g}, ${b}, 0.8)`);
+    
     const term = new Terminal({
         cols: 120, rows: 35,
         theme: {
-            background: THEME.background,
+            background: 'rgba(0, 0, 0, 0)',
             foreground: THEME.foreground,
             cursor: THEME.cursor,
             selectionBackground: THEME.selectionBackground,
@@ -395,16 +438,16 @@ Use 'cd projects' then 'ls' to see my work.`;
     // colors to use
     const labelColor = THEME.blue;
     const valueColor = THEME.foreground;
-    const promptColor = THEME.cursor;
+    const promptColor = THEME.blue;
     const asciiColor = THEME.brightCyan;
     const dirColor = THEME.blue;
 
     const labelColors = {
         name: THEME.blue,
-        description: THEME.foreground,
-        website: THEME.brightCyan,
-        github: THEME.brightCyan,
-        demo: THEME.magenta,
+        description: THEME.blue,
+        website: THEME.blue,
+        github: THEME.blue,
+        demo: THEME.blue,
     };
 
     const linkColor = THEME.brightCyan;
@@ -430,9 +473,9 @@ Use 'cd projects' then 'ls' to see my work.`;
             if (key === 'name') {
                 lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`);
             } else if (key === 'website' || key === 'github') {
-                lines.push(coloredLabel + ' ' + colorText(value, linkColor));
+                lines.push(`\x1b[1m${coloredLabel}\x1b[0m` + ' ' + colorText(value, linkColor));
             } else {
-                lines.push(`${coloredLabel} ${value}`);
+                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`);
             }
         }
         return lines.join('\r\n');
@@ -471,107 +514,109 @@ Use 'cd projects' then 'ls' to see my work.`;
     }
 
     const browser = detectBrowser();
-
+    
     const browserAscii = {
-        chrome: [
-        "        +++++       ",
-        "        +++++       ",
-        "        +++++       ",
-        "   +++++++++++++++  ",
-        "   +++++++++++++++  ",
-        "++++++++++++++++++++",
-        "++++++++++++++++++++",
-        "++++++++*****%%SSSSS",
-        "++++++++*****%%SSSSS",
-        "+++;;**********SSSSS",
-        "+++;;**********SSSSS",
-        "+++++**********SSSSS",
-        "+++++**********SSSSS",
-        "++++++++*****;;SSSSS",
-        "++++++++*****;;SSSSS",
-        "++++++++++;;;SSSSSSS",
-        "++++++++++;;;SSSSSSS",
-        "   +++++++SSSSSSSS  ",
-        "   +++++++SSSSSSSS  ",
-        "        ;;SSS       ",
-        "        ;;SSS       ",
-        ],
         firefox: [
-        "             #      ",
-        "            S#      ",
-        "      :;;;++###     ",
-        "  ;  ::;;+++####%   ",
-        "  ;++*??;+++#####S  ",
-        "  ;++*?:;;++######  ",
-        " ;;+**?*?*++SS##### ",
-        " ;;+**?*??;++SS#### ",
-        " ;;+**?%:;;;;+SS##S ",
-        ":;;+**??::;;;;:SSSSS",
-        ":;;+*+,:::::;;:%SSSS",
-        ":;;+++*,::::::,S%%SS",
-        ":;;++**??%%;::,S%%%%",
-        " :;;+***??%,,,SS%%% ",
-        " :;;++*..,,,,.%%%%% ",
-        " :;;;++**,,,%%%%%?+ ",
-        "  :;;;++**????????  ",
-        "   :;;;++***?????*  ",
-        "    :;;;+++*****    ",
-        "     :;;;+++++:     ",
-        "       ;;;;;++      ",
+            "                          ##            ",
+            "                        SS##            ",
+            "            ::;;;;;;++++######          ",
+            "    ;;    ::::;;;;++++++########%%      ",
+            "    ;;++++**????;;++++++##########SS    ",
+            "    ;;++++**??::;;;;++++############    ",
+            "  ;;;;++****??**??**++++SSSS##########  ",
+            "  ;;;;++****??**????;;++++SSSS########  ",
+            "  ;;;;++****??%%::;;;;;;;;++SSSS####SS  ",
+            "::;;;;++****????::::;;;;;;;;::SSSSSSSSSS",
+            "::;;;;++**++,,::::::::::;;;;::%%SSSSSSSS",
+            "::;;;;++++++**,,::::::::::::,,SS%%%%SSSS",
+            "::;;;;++++****????%%%%;;::::,,SS%%%%%%%%",
+            "  ::;;;;++******????%%,,,,,,SSSS%%%%%%  ",
+            "  ::;;;;++++**....,,,,,,,,..%%%%%%%%%%  ",
+            "  ::;;;;;;++++****,,,,,,%%%%%%%%%%??++  ",
+            "    ::;;;;;;++++****????????????????    ",
+            "      ::;;;;;;++++******??????????**    ",
+            "        ::;;;;;;++++++**********        ",
+            "          ::;;;;;;++++++++++::          ",
+            "              ;;;;;;;;;;++++            ",
+        ],    
+        chrome: [
+            "                ++++++++++              ",
+            "                ++++++++++              ",
+            "                ++++++++++              ",
+            "      ++++++++++++++++++++++++++++++    ",
+            "      ++++++++++++++++++++++++++++++    ",
+            "++++++++++++++++++++++++++++++++++++++++",
+            "++++++++++++++++++++++++++++++++++++++++",
+            "++++++++++++++++**********%%%%SSSSSSSSSS",
+            "++++++++++++++++**********%%%%SSSSSSSSSS",
+            "++++++;;;;********************SSSSSSSSSS",
+            "++++++;;;;********************SSSSSSSSSS",
+            "++++++++++********************SSSSSSSSSS",
+            "++++++++++********************SSSSSSSSSS",
+            "++++++++++++++++**********;;;;SSSSSSSSSS",
+            "++++++++++++++++**********;;;;SSSSSSSSSS",
+            "++++++++++++++++++++;;;;;;SSSSSSSSSSSSSS",
+            "++++++++++++++++++++;;;;;;SSSSSSSSSSSSSS",
+            "      ++++++++++++++SSSSSSSSSSSSSSSS    ",
+            "      ++++++++++++++SSSSSSSSSSSSSSSS    ",
+            "                ;;;;SSSSSS              ",
+            "                ;;;;SSSSSS              ",
         ],
         edge: [
-        "      ????????      ",
-        "      ????????      ",
-        "    ??????????????  ",
-        "    ??????????????  ",
-        "  ????????????????%%",
-        "  ????????????????%%",
-        "??;;;;;;;;????????%%",
-        ";;++++++++;;??????%%",
-        ";;++++++++;;??????%%",
-        ";;;;++,,    ????????",
-        ";;;;++,,    ????????",
-        ";;;;;;::    ****????",
-        ";;;;;;::    ****????",
-        ";;;;,,::    ******  ",
-        ";;;;,,::::          ",
-        ";;;;,,::::          ",
-        "  ;;;;::::::::::::  ",
-        "  ;;;;::::::::::::  ",
-        "    ;;,,::::::::    ",
-        "    ;;,,::::::::    ",
-        "      ;;;;,,::      ",
+            "            ????????????????            ",
+            "            ????????????????            ",
+            "        ????????????????????????????    ",
+            "        ????????????????????????????    ",
+            "    ????????????????????????????????%%%%",
+            "    ????????????????????????????????%%%%",
+            "????;;;;;;;;;;;;;;;;????????????????%%%%",
+            ";;;;++++++++++++++++;;;;????????????%%%%",
+            ";;;;++++++++++++++++;;;;????????????%%%%",
+            ";;;;;;;;++++,,,,        ????????????????",
+            ";;;;;;;;++++,,,,        ????????????????",
+            ";;;;;;;;;;;;::::        ********????????",
+            ";;;;;;;;;;;;::::        ********????????",
+            ";;;;;;;;,,,,::::        ************    ",
+            ";;;;;;;;,,,,::::::::                    ",
+            ";;;;;;;;,,,,::::::::                    ",
+            "    ;;;;;;;;::::::::::::::::::::::::    ",
+            "    ;;;;;;;;::::::::::::::::::::::::    ",
+            "        ;;;;,,,,::::::::::::::::        ",
+            "        ;;;;,,,,::::::::::::::::        ",
+            "            ;;;;;;;;,,,,::::            ",
         ],
         safari: [
-        "@#@#@#@@????#@#@#@#@",
-        "#@#@#???@??@???#@#@#",
-        "@#@#??@??????@??#@#@",
-        "#@#?@??????????@;#@#",
-        "@#*@***********:@*#@",
-        "#*************:****#",
-        "@*@**********:***@*@",
-        "@**********::+*****@",
-        "*@********:::*****@*",
-        "*********?::********",
-        "++*+++++@%++++++++++",
-        "+@+++++@%%++++++++@+",
-        "#++++++%%++++++++++#",
-        "@+@+++%*+++++++++@+@",
-        "#++++%+++++++++++++#",
-        "@#+@%+++++++++++@+#@",
-        "#@#?@++;+++++++@;#@#",
-        "@#@#;;@;;;;;;@;;#@#@",
-        "#@#@#;;;@;;@;;;#@#@#",
-        "@#@#@#@@;;;;#@#@#@#@",
-        "                    ",
+            "@@##@@##@@##@@@@????????##@@##@@##@@##@@",
+            "##@@##@@##??????@@????@@??????##@@##@@##",
+            "@@##@@##????@@????????????@@????##@@##@@",
+            "##@@##??@@????????????????????@@;;##@@##",
+            "@@##**@@**********************::@@**##@@",
+            "##**************************::********##",
+            "@@**@@********************::******@@**@@",
+            "@@********************::::++**********@@",
+            "**@@****************::::::**********@@**",
+            "******************??::::****************",
+            "++++**++++++++++@@%%++++++++++++++++++++",
+            "++@@++++++++++@@%%%%++++++++++++++++@@++",
+            "##++++++++++++%%%%++++++++++++++++++++##",
+            "@@++@@++++++%%**++++++++++++++++++@@++@@",
+            "##++++++++%%++++++++++++++++++++++++++##",
+            "@@##++@@%%++++++++++++++++++++++@@++##@@",
+            "##@@##??@@++++;;++++++++++++++@@;;##@@##",
+            "@@##@@##;;;;@@;;;;;;;;;;;;@@;;;;##@@##@@",
+            "##@@##@@##;;;;;;@@;;;;@@;;;;;;##@@##@@##",
+            "@@##@@##@@##@@@@;;;;;;;;##@@##@@##@@##@@",
+            "                                        ",
         ],
         generic: [
-        "  _______  ",
-        " /       \\ ",
-        "|  (o) (o)|",
-        "|    ^    |",
-        "|   '-'   |",
-        " \\_______/ ",
+            " _____________________________ ",
+            "< I can't detect your browser >",
+            " ----------------------------- ",
+            "        \\   ^__^               ",
+            "         \\  (oo)\\_______       ",
+            "            (__)\\       )\\/\\   ",
+            "                ||----w |      ",
+            "                ||     ||      ",
         ],
     };
 
@@ -626,15 +671,13 @@ Use 'cd projects' then 'ls' to see my work.`;
     const asciiWidth = Math.max(...ascii.map(l => l.length));
 
     const asciiColored = ascii.map((line, ri) => {
-        const padded = (line || '').padEnd(asciiWidth);
+        const padded = line.padEnd(asciiWidth);
         let out = '';
         for (let ci = 0; ci < padded.length; ci++) {
             const ch = padded[ci];
-            if (ch === ' ') {
-                out += ch;
-                continue;
-            }
-            const sampledHex = colorGrid && colorGrid[ri] ? colorGrid[ri][ci] : null;
+            if (ch === ' ') { out += ch; continue; }
+            const originalCol = Math.floor(ci / 2);
+            const sampledHex = colorGrid && colorGrid[ri] ? colorGrid[ri][originalCol] : null;
             const hex = sampledHex || densityColor(browser.key, ch);
             out += colorText(ch, hex);
         }
@@ -649,7 +692,7 @@ Use 'cd projects' then 'ls' to see my work.`;
             ['Github', 'github.com/username'],
             ['LinkedIn', 'linkedin.com/in/username'],
             ['Email', 'user@example.com'],
-            ['Eduction,', 'University of Waterloo'],
+            ['Eduction', 'University of Waterloo'],
             ['Degree', 'B.A.Sc. Computer Engineering'],
             ['Browser', `${browser.name} ${browser.version}`],
             ['Platform', navigator.platform || 'unknown'],
