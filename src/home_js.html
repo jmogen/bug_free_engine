@@ -609,14 +609,14 @@ Use 'cd projects' then 'ls' to see my work.`;
             "                                        ",
         ],
         generic: [
-            " _____________________________ ",
-            "< I can't detect your browser >",
-            " ----------------------------- ",
-            "        \\   ^__^               ",
-            "         \\  (oo)\\_______       ",
-            "            (__)\\       )\\/\\   ",
-            "                ||----w |      ",
-            "                ||     ||      ",
+            " _________________________________________ ",
+            "< I haven't implemented your browser yet. >",
+            " ----------------------------------------- ",
+            "           \\   ^__^                       ",
+            "           \\  (oo)\\_________             ",
+            "              (__) \\        )\\/\\        ",
+            "                    ||----w |              ",
+            "                    ||     ||              ",
         ],
     };
 
@@ -631,7 +631,7 @@ Use 'cd projects' then 'ls' to see my work.`;
     const ascii = browserAscii[browser.key] || browserAscii.generic;
     const colorGrid = browserColorGrids[browser.key] || null;
 
-    const hostname = 'user@portfolio';
+    const hostname = 'jack@mogen';
     const separator = '-'.repeat(hostname.length);
     const ramInfo = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Unknown';
     const cpuInfo = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'Unknown';
@@ -688,12 +688,15 @@ Use 'cd projects' then 'ls' to see my work.`;
 
     function buildSysPairs(ipText) {
         return [
-            ['Host', hostname],
-            ['Github', 'github.com/username'],
-            ['LinkedIn', 'linkedin.com/in/username'],
-            ['Email', 'user@example.com'],
+            ["__header__", "Personal Information"],
+            ['Host', hostname],  
+            ['Github', 'https://github.com/jmogen'],
+            ['LinkedIn', 'https://linkedin.com/in/jackmogen'],
+            ['Email', 'jmogen@uwaterloo.ca'],
             ['Eduction', 'University of Waterloo'],
             ['Degree', 'B.A.Sc. Computer Engineering'],
+            ["__blank__", ""],
+            ["__header__", "System Information"],
             ['Browser', `${browser.name} ${browser.version}`],
             ['Platform', navigator.platform || 'unknown'],
             ['Language', navigator.language || 'en-US'],
@@ -702,8 +705,10 @@ Use 'cd projects' then 'ls' to see my work.`;
             ['CPU', cpuInfo],
             ['Terminal', 'xterm.js'],
             ['Uptime', 'Always on'],
-            ['IP', currentIp],
-            ['Location', currentLocation]
+            // ['IP', currentIp],
+            ['Location', currentLocation],
+            ['Date', new Date().toLocaleString()],
+
         ];
     }
 
@@ -712,13 +717,20 @@ Use 'cd projects' then 'ls' to see my work.`;
 
         const sysPairs = buildSysPairs(currentIp);
 
-        const sysInfoColored = sysPairs.map(([label, val]) => {
-            const labelPlain = (label + ':').padEnd(12);
+         const sysInfoColored = sysPairs.map(([label, val]) => {
+            if (label === "__header__") {
+                return colorText(val, THEME.blue);
+            }
+            if (label === "__blank__") {
+                return "";
+            }
+            const labelPlain = label.padEnd(12);
             const labelCol = colorText(labelPlain, labelColor);
             const valueCol = colorText(String(val), valueColor);
-            return `${labelCol} ${valueCol}`;
+            return labelCol + valueCol;
         });
 
+        sysInfoColored.push('');
         sysInfoColored.push(colorLine);
 
         const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
