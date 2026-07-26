@@ -460,7 +460,13 @@
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => fitAddon.fit(), 100);
+        resizeTimeout = setTimeout(() => {
+            fitAddon.fit();
+            term.reset();
+            renderBanner();
+            outputHistory.forEach(renderEntry);
+            term.write(currentPrompt + command);
+        }, 100);
     });
 
     // let currentPrompt = 'user@terminal:/home/user$ ';
@@ -509,6 +515,18 @@
             lines.push(wrapText(line, term.cols));
         }
         return lines.join('\r\n');
+    }
+
+    function renderEntry(entry) {
+        if (entry.type === 'prompt') {
+            term.write(entry.prompt + entry.command + '\r\n');
+        } else if (entry.type === 'project') {
+            term.write(renderProject(entry.data));
+            term.write('\r\n');
+        } else {
+            writeTerminalOutput(entry.text);
+            term.write('\r\n');
+        }
     }
 
     function writeTerminalOutput(text) {
@@ -868,6 +886,7 @@
 
     let commandHistory = [];
     let historyIndex = -1;
+    let outputHistory = [];
 
     term.onData(e => {
         if (e === '\r') {
@@ -877,6 +896,7 @@
             }
             term.write('\r\n');
             if (command.trim()) {
+                outputHistory.push({ type: 'prompt', prompt: currentPrompt, command: command });
                 handleCommand(command.trim());
             } else {
                 term.write(currentPrompt);
@@ -931,14 +951,17 @@
         const prompt = getPromptRaw();
         currentPrompt = colorText(getPromptRaw(), promptColor);
         if (output === '[CLEAR]') {
+            outputHistory = [];
             term.clear();
             term.write(currentPrompt);
             return;
         }
        if (output && typeof output === 'object' && output.type === 'project') {
+        outputHistory.push({ type: 'project', data: output.data });
         term.write(renderProject(output.data));
         term.write('\r\n\r\n'); // end output line + blank line
         } else if (output) {
+            outputHistory.push({ type: 'text', text: output });
             writeTerminalOutput(output);
             term.write('\r\n\r\n'); // end output line + blank line
         } else {
