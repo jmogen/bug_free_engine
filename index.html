@@ -199,21 +199,28 @@
 
     function cmdAbout() {
         const aboutHeaderLabel = colorText('About Me:', THEME.blue);
+        const aboutHeader = `\x1b[1m${aboutHeaderLabel}\x1b[0m`;
         const readme = getReadmeContent();
 
         const projectsHeaderLabel = colorText('Projects:', THEME.blue);
-        const projectsHeader = `\r\n\x1b[1m${projectsHeaderLabel}\x1b[0m\r\n`;
+        const projectsHeader = `\r\n\x1b[1m${projectsHeaderLabel}\x1b[0m`;
 
-        const projectEntries = Object.entries(PROJECTS).map(([slug, data]) => {
-            return renderProject(data) + '\r\n';
-        });
+        terminalState.currentDir = '/home/user/projects';
+
+        const projectSlugs = Object.keys(PROJECT_FILES);
+        const projectListing = formatColumns(projectSlugs, term.cols);
 
         const hint = colorText(
-            "\r\nI recommend scrolling to the top to get started.",
+            "\r\nType \"cat <project-name>\" to read more about any project. I recommend scrolling to the top to get started.",
             valueColor
         );
 
-        return [aboutHeaderLabel, readme, projectsHeader, ...projectEntries, hint].join('\r\n');
+        const tip = colorText(
+            "\r\nTip: You can hit tab to autocomplete the project name after typing \"cat\".",
+            valueColor
+        );
+
+        return [aboutHeader, readme, projectsHeader, projectListing, hint, tip].join('\r\n');
     }
 
 
@@ -248,6 +255,30 @@
     function stripAnsi(text) {
         return text.replace(/\x1b\[[0-9;]*m/g, '');
     }
+
+    function wrapText(text, width) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        let currentVisibleLen = 0;
+
+        for (const word of words) {
+            const wordVisibleLen = stripAnsi(word).length;
+            const spaceLen = currentLine ? 1 : 0;
+
+            if (currentVisibleLen + spaceLen + wordVisibleLen > width) {
+                lines.push(currentLine);
+                currentLine = word;
+                currentVisibleLen = wordVisibleLen;
+            } else {
+                currentLine = currentLine ? `${currentLine} ${word}` : word;
+                currentVisibleLen += spaceLen + wordVisibleLen;
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines.join('\r\n');
+    }
+
 
     function cmdLs(args) {
         const current = terminalState.currentDir;
@@ -436,7 +467,13 @@
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => fitAddon.fit(), 100);
+        resizeTimeout = setTimeout(() => {
+            fitAddon.fit();
+            term.reset();
+            renderBanner();
+            outputHistory.forEach(renderEntry);
+            term.write(currentPrompt + command);
+        }, 100);
     });
 
     // let currentPrompt = 'user@terminal:/home/user$ ';
@@ -476,23 +513,37 @@
             const hex = labelColors[key] || 'eeeeec';
             const coloredLabel = colorText(`${label}:`, hex);
 
-            if (key === 'name') {
-                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`);
-            } else if (key === 'website' || key === 'github') {
-                lines.push(`\x1b[1m${coloredLabel}\x1b[0m` + ' ' + colorText(value, linkColor));
+            let line;
+            if (key === 'website' || key === 'github') {
+                line = `\x1b[1m${coloredLabel}\x1b[0m ` + colorText(value, linkColor);
             } else {
-                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`);
+                line = `\x1b[1m${coloredLabel}\x1b[0m ${value}`;
             }
+            lines.push(wrapText(line, term.cols));
         }
         return lines.join('\r\n');
     }
 
-    function writeTerminalOutput(text) {
-        if (!text) {
-            return;
+    function renderEntry(entry) {
+        if (entry.type === 'prompt') {
+            term.write(entry.prompt + entry.command + '\r\n');
+        } else if (entry.type === 'project') {
+            term.write(renderProject(entry.data));
+            term.write('\r\n');
+        } else {
+            writeTerminalOutput(entry.text);
+            term.write('\r\n');
         }
-        const normalized = text.replace(/\r?\n/g, '\r\n');
-        term.write(normalized);
+    }
+
+    function writeTerminalOutput(text) {
+        if (!text) return;
+        const wrapped = text
+            .split('\n')
+            .map(line => wrapText(line, term.cols))
+            .join('\r\n');
+        term.write(wrapped);
+        // term.write('\r\n');
     }
 
     term.write('\r\n');
@@ -718,12 +769,34 @@
         ];
     }
 
+    function renderSideBySide(asciiLines, infoLines, gap) {
+        const asciiWidth = Math.max(...asciiLines.map(l => stripAnsi(l).length));
+        const maxRows = Math.max(asciiLines.length, infoLines.length);
+        for (let i = 0; i < maxRows; i++) {
+            const art = asciiLines[i] || '';
+            const info = infoLines[i] || '';
+            const artPlainLen = stripAnsi(art).length;
+            const padding = ' '.repeat(asciiWidth - artPlainLen + gap);
+            term.write(art + padding + info + '\r\n');
+        }
+    }
+
+    function renderStacked(asciiLines, infoLines) {
+        asciiLines.forEach(line => {
+            term.write(wrapText(line, term.cols) + '\r\n');
+        });
+        term.write('\r\n');
+        infoLines.forEach(line => {
+            term.write(wrapText(line, term.cols) + '\r\n');
+        });
+    }
+
     function renderBanner() {
         term.reset();
 
         const sysPairs = buildSysPairs(currentIp);
 
-         const sysInfoColored = sysPairs.map(([label, val]) => {
+        const sysInfoColored = sysPairs.map(([label, val]) => {
             if (label === "__header__") {
                 return colorText(val, THEME.blue);
             }
@@ -739,18 +812,31 @@
         sysInfoColored.push('');
         sysInfoColored.push(colorLine);
 
-        const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
-        const sysInfoBottomAligned = [
-            ...Array(sysPadding).fill(''),
-            ...sysInfoColored,
-        ];
-
         const gap = '  ';
-        const maxLines = Math.max(asciiColored.length, sysInfoBottomAligned.length);
-        for (let i = 0; i < maxLines; i++) {
-            const asciiLine = asciiColored[i] || ''.padEnd(asciiWidth);
-            const infoLine = sysInfoBottomAligned[i] || '';
-            term.write(asciiLine + gap + infoLine + '\r\n');
+        const infoMaxWidth = Math.max(...sysInfoColored.map(l => stripAnsi(l).length));
+        const requiredWidth = asciiWidth + stripAnsi(gap).length + infoMaxWidth;
+
+        if (term.cols >= requiredWidth) {
+            const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
+            const sysInfoBottomAligned = [
+                ...Array(sysPadding).fill(''),
+                ...sysInfoColored,
+            ];
+
+            const maxLines = Math.max(asciiColored.length, sysInfoBottomAligned.length);
+            for (let i = 0; i < maxLines; i++) {
+                const asciiLine = asciiColored[i] || ''.padEnd(asciiWidth);
+                const infoLine = sysInfoBottomAligned[i] || '';
+                term.write(asciiLine + gap + infoLine + '\r\n');
+            }
+        } else {
+            asciiColored.forEach(line => {
+                term.write(line + '\r\n');
+            });
+            term.write('\r\n');
+            sysInfoColored.forEach(line => {
+                term.write(wrapText(line, term.cols) + '\r\n');
+            });
         }
 
         term.write("\r\nIf you have never used a terminal before and don't want to learn, just type \"about\" and hit enter.\r\n\r\nIf you want to learn, you can type \"help\" and hit enter or try this: https://ubuntu.com/tutorials/command-line-for-beginners#1-overview\r\n\r\n");
@@ -842,6 +928,7 @@
 
     let commandHistory = [];
     let historyIndex = -1;
+    let outputHistory = [];
 
     term.onData(e => {
         if (e === '\r') {
@@ -851,6 +938,7 @@
             }
             term.write('\r\n');
             if (command.trim()) {
+                outputHistory.push({ type: 'prompt', prompt: currentPrompt, command: command });
                 handleCommand(command.trim());
             } else {
                 term.write(currentPrompt);
@@ -905,14 +993,17 @@
         const prompt = getPromptRaw();
         currentPrompt = colorText(getPromptRaw(), promptColor);
         if (output === '[CLEAR]') {
+            outputHistory = [];
             term.clear();
             term.write(currentPrompt);
             return;
         }
        if (output && typeof output === 'object' && output.type === 'project') {
+        outputHistory.push({ type: 'project', data: output.data });
         term.write(renderProject(output.data));
         term.write('\r\n\r\n'); // end output line + blank line
         } else if (output) {
+            outputHistory.push({ type: 'text', text: output });
             writeTerminalOutput(output);
             term.write('\r\n\r\n'); // end output line + blank line
         } else {
