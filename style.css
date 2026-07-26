@@ -25,8 +25,8 @@ body {
     padding: 10px;
     box-sizing: border-box;
     background: var(--theme-bg-translucent);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -147,5 +147,5 @@ body {
     --theme-selection: rgba(0, 55, 71, 0.55);
     --theme-red: #d01b24;
     --theme-white: #e9e2cb;
-    --theme-bg-translucent: rgba(0, 30, 38, 0.55);
+    --theme-bg-translucent: rgba(0, 30, 38, 0.75);
 }
