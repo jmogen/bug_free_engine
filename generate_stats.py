@@ -170,8 +170,8 @@ async def fetch_stats(session, username):
     stats["lines_deleted"] = lines_deleted
     stats["lines_changed"] = lines_added + lines_deleted
 
-    language_repos = [r for r in repos if r["name"] != "Repository"]
-    stats["languages"] = await fetch_language_breakdown(session, username, language_repos)
+    # language_repos = [r for r in repos if r["name"] != "Repository"]
+    # stats["languages"] = await fetch_language_breakdown(session, username, language_repos)
 
     return stats
 
