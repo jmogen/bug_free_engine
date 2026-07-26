@@ -762,12 +762,34 @@
         ];
     }
 
+    function renderSideBySide(asciiLines, infoLines, gap) {
+        const asciiWidth = Math.max(...asciiLines.map(l => stripAnsi(l).length));
+        const maxRows = Math.max(asciiLines.length, infoLines.length);
+        for (let i = 0; i < maxRows; i++) {
+            const art = asciiLines[i] || '';
+            const info = infoLines[i] || '';
+            const artPlainLen = stripAnsi(art).length;
+            const padding = ' '.repeat(asciiWidth - artPlainLen + gap);
+            term.write(art + padding + info + '\r\n');
+        }
+    }
+
+    function renderStacked(asciiLines, infoLines) {
+        asciiLines.forEach(line => {
+            term.write(wrapText(line, term.cols) + '\r\n');
+        });
+        term.write('\r\n');
+        infoLines.forEach(line => {
+            term.write(wrapText(line, term.cols) + '\r\n');
+        });
+    }
+
     function renderBanner() {
         term.reset();
 
         const sysPairs = buildSysPairs(currentIp);
 
-         const sysInfoColored = sysPairs.map(([label, val]) => {
+        const sysInfoColored = sysPairs.map(([label, val]) => {
             if (label === "__header__") {
                 return colorText(val, THEME.blue);
             }
@@ -783,18 +805,31 @@
         sysInfoColored.push('');
         sysInfoColored.push(colorLine);
 
-        const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
-        const sysInfoBottomAligned = [
-            ...Array(sysPadding).fill(''),
-            ...sysInfoColored,
-        ];
-
         const gap = '  ';
-        const maxLines = Math.max(asciiColored.length, sysInfoBottomAligned.length);
-        for (let i = 0; i < maxLines; i++) {
-            const asciiLine = asciiColored[i] || ''.padEnd(asciiWidth);
-            const infoLine = sysInfoBottomAligned[i] || '';
-            term.write(asciiLine + gap + infoLine + '\r\n');
+        const infoMaxWidth = Math.max(...sysInfoColored.map(l => stripAnsi(l).length));
+        const requiredWidth = asciiWidth + stripAnsi(gap).length + infoMaxWidth;
+
+        if (term.cols >= requiredWidth) {
+            const sysPadding = Math.max(0, asciiColored.length - sysInfoColored.length);
+            const sysInfoBottomAligned = [
+                ...Array(sysPadding).fill(''),
+                ...sysInfoColored,
+            ];
+
+            const maxLines = Math.max(asciiColored.length, sysInfoBottomAligned.length);
+            for (let i = 0; i < maxLines; i++) {
+                const asciiLine = asciiColored[i] || ''.padEnd(asciiWidth);
+                const infoLine = sysInfoBottomAligned[i] || '';
+                term.write(asciiLine + gap + infoLine + '\r\n');
+            }
+        } else {
+            asciiColored.forEach(line => {
+                term.write(line + '\r\n');
+            });
+            term.write('\r\n');
+            sysInfoColored.forEach(line => {
+                term.write(wrapText(line, term.cols) + '\r\n');
+            });
         }
 
         term.write("\r\nIf you have never used a terminal before and don't want to learn, just type \"about\" and hit enter.\r\n\r\nIf you want to learn, you can type \"help\" and hit enter or try this: https://ubuntu.com/tutorials/command-line-for-beginners#1-overview\r\n\r\n");
