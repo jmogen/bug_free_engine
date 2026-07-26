@@ -198,15 +198,22 @@
     }
 
     function cmdAbout() {
-        return `Welcome to my terminal-themed portfolio!
+        const aboutHeaderLabel = colorText('About Me:', THEME.blue);
+        const readme = getReadmeContent();
 
-I'm a software engineer passionate about building scalable systems
-and creating innovative solutions to complex problems.
+        const projectsHeaderLabel = colorText('Projects:', THEME.blue);
+        const projectsHeader = `\r\n\x1b[1m${projectsHeaderLabel}\x1b[0m\r\n`;
 
-This portfolio showcases my projects in a retro terminal interface.
-Feel free to explore using the available commands!
+        const projectEntries = Object.entries(PROJECTS).map(([slug, data]) => {
+            return renderProject(data) + '\r\n';
+        });
 
-Use 'cd projects' then 'ls' to see my work.`;
+        const hint = colorText(
+            "\r\nI recommend scrolling to the top to get started.",
+            valueColor
+        );
+
+        return [aboutHeaderLabel, readme, projectsHeader, ...projectEntries, hint].join('\r\n');
     }
 
 
@@ -746,7 +753,7 @@ Use 'cd projects' then 'ls' to see my work.`;
             term.write(asciiLine + gap + infoLine + '\r\n');
         }
 
-        term.write('\r\nType "help" for available commands\r\n\r\n');
+        term.write("\r\nIf you have never used a terminal before and don't want to learn, just type \"about\" and hit enter.\r\n\r\nIf you want to learn, you can type \"help\" and hit enter or try this: https://ubuntu.com/tutorials/command-line-for-beginners#1-overview\r\n\r\n");
 
         const coloredPrompt = colorText(currentPrompt, promptColor);
         term.write(coloredPrompt);
@@ -945,21 +952,34 @@ Use 'cd projects' then 'ls' to see my work.`;
     }
 
     function getReadmeContent() {
-        return `Welcome to My Portfolio
+        return `Welcome!
 
-    This is my personal portfolio website. Check out the projects and skills!
+This is my personal project website/a list of things I have worked on. I built it as a nice organized way to read about some of the projects if sorting through my GitHub is too time consuming. I did spend a little too much time ricing (https://www.reddit.com/r/unixporn/) my own arch linux setup, so I thought it would be fun to make a terminal-like website. 
 
-    GitHub Stats (all-time):
-    Repos:          ${ghStats.repos}
-    Contributions:  ${ghStats.contributions_all_time}
-    Commits:        ${ghStats.commits}
-    Pull Requests:  ${ghStats.pull_requests}
-    PR Reviews:     ${ghStats.pr_reviews}
-    Lines Added:    ${ghStats.lines_added}
-    Lines Deleted:  ${ghStats.lines_deleted}
-    Lines Changed:  ${ghStats.lines_changed}
-    `;
-    }
+This is definetely not a completely faithful recreation of a terminal, but it is a fun way to explore my projects and learn about me. I hope you enjoy it!
+
+I graduated from the University of Waterloo with a B.A.Sc. in Computer Engineering in 2026.
+
+Hobby wise I have been running since I was 12, I play chess (fairly poorly) and I enjoy weightlifting, but haven't been to a competition (yet?). I also enjoy reading whether it be science fiction or philosophy. I have recently been reading some works by French enlightment philosophers!
+
+When I have time I try to spend it climbing mountains and learning languages. Aunque, mi español es muy malo. Pero estoy aprendiendo. I have lived in the United States, Canada, and Japan. 
+
+I quite like puzzles and problem solving which might have been what drew me to computer engineering.
+
+Fun fact: the background is a satelite image of the NYC metro area at night, and also where I grew up!
+
+Here are some of my Github stats, updated weekly (not manually, don't worry).
+
+GitHub Stats (all-time):
+Repos:          ${ghStats.repos}
+Contributions:  ${ghStats.contributions_all_time}
+Commits:        ${ghStats.commits}
+Pull Requests:  ${ghStats.pull_requests}
+PR Reviews:     ${ghStats.pr_reviews}
+Lines Added:    ${ghStats.lines_added}
+Lines Deleted:  ${ghStats.lines_deleted}
+Lines Changed:  ${ghStats.lines_changed}`;
+}
     </script>
 </body>
 </html>
