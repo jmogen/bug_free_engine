@@ -199,21 +199,28 @@
 
     function cmdAbout() {
         const aboutHeaderLabel = colorText('About Me:', THEME.blue);
+        const aboutHeader = `\x1b[1m${aboutHeaderLabel}\x1b[0m`;
         const readme = getReadmeContent();
 
         const projectsHeaderLabel = colorText('Projects:', THEME.blue);
-        const projectsHeader = `\r\n\x1b[1m${projectsHeaderLabel}\x1b[0m\r\n`;
+        const projectsHeader = `\r\n\x1b[1m${projectsHeaderLabel}\x1b[0m`;
 
-        const projectEntries = Object.entries(PROJECTS).map(([slug, data]) => {
-            return renderProject(data) + '\r\n';
-        });
+        terminalState.currentDir = '/home/user/projects';
+
+        const projectSlugs = Object.keys(PROJECT_FILES);
+        const projectListing = formatColumns(projectSlugs, term.cols);
 
         const hint = colorText(
-            "\r\nI recommend scrolling to the top to get started.",
+            "\r\nType \"cat <project-name>\" to read more about any project. I recommend scrolling to the top to get started.",
             valueColor
         );
 
-        return [aboutHeaderLabel, readme, projectsHeader, ...projectEntries, hint].join('\r\n');
+        const tip = colorText(
+            "\r\nTip: You can hit tab to autocomplete the project name after typing \"cat\".",
+            valueColor
+        );
+
+        return [aboutHeader, readme, projectsHeader, projectListing, hint, tip].join('\r\n');
     }
 
 
