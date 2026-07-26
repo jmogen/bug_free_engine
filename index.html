@@ -249,6 +249,30 @@
         return text.replace(/\x1b\[[0-9;]*m/g, '');
     }
 
+    function wrapText(text, width) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        let currentVisibleLen = 0;
+
+        for (const word of words) {
+            const wordVisibleLen = stripAnsi(word).length;
+            const spaceLen = currentLine ? 1 : 0;
+
+            if (currentVisibleLen + spaceLen + wordVisibleLen > width) {
+                lines.push(currentLine);
+                currentLine = word;
+                currentVisibleLen = wordVisibleLen;
+            } else {
+                currentLine = currentLine ? `${currentLine} ${word}` : word;
+                currentVisibleLen += spaceLen + wordVisibleLen;
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines.join('\r\n');
+    }
+
+
     function cmdLs(args) {
         const current = terminalState.currentDir;
         const files = Object.keys(DIRECTORY_FILES[current] || {});
@@ -476,23 +500,25 @@
             const hex = labelColors[key] || 'eeeeec';
             const coloredLabel = colorText(`${label}:`, hex);
 
-            if (key === 'name') {
-                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`);
-            } else if (key === 'website' || key === 'github') {
-                lines.push(`\x1b[1m${coloredLabel}\x1b[0m` + ' ' + colorText(value, linkColor));
+            let line;
+            if (key === 'website' || key === 'github') {
+                line = `\x1b[1m${coloredLabel}\x1b[0m ` + colorText(value, linkColor);
             } else {
-                lines.push(`\x1b[1m${coloredLabel}\x1b[0m ${value}`);
+                line = `\x1b[1m${coloredLabel}\x1b[0m ${value}`;
             }
+            lines.push(wrapText(line, term.cols));
         }
         return lines.join('\r\n');
     }
 
     function writeTerminalOutput(text) {
-        if (!text) {
-            return;
-        }
-        const normalized = text.replace(/\r?\n/g, '\r\n');
-        term.write(normalized);
+        if (!text) return;
+        const wrapped = text
+            .split('\n')
+            .map(line => wrapText(line, term.cols))
+            .join('\r\n');
+        term.write(wrapped);
+        // term.write('\r\n');
     }
 
     term.write('\r\n');
