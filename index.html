@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal Portfolio</title>
+    <title>Terminal Projects</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
     <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
@@ -191,8 +191,10 @@
   cd [path]    - Change directory
   uname        - System information
   date         - Current date and time
+  wc [file]     - Word, line, and character count of a file
   clear        - Clear terminal
   help         - Show this message
+  
 
   (Try: mkdir, sudo for some fun!)`;
     }
@@ -211,7 +213,7 @@
         const projectListing = formatColumns(projectSlugs, term.cols);
 
         const hint = colorText(
-            "\r\nType \"cat <project-name>\" to read more about any project. I recommend scrolling to the top to get started.",
+            "\r\nType \"cat <project-name>\" to read more about any project. I recommend scrolling to the top to get started. \r\n\r\n Example: \"cat ai-powered_robotic_ukulele.txt\"",
             valueColor
         );
 
@@ -285,10 +287,32 @@
         const files = Object.keys(DIRECTORY_FILES[current] || {});
         const subdirs = DIRECTORY_SUBDIRS[current] || [];
 
-        const coloredDirs = subdirs.map(d => `\x1b[1m${colorText(d, dirColor)}\x1b[0m`);
-        const entries = [...coloredDirs, ...files];
+        const longFlag = args.includes('-l') || args.includes('-la') || args.includes('-al');
 
-        return formatColumns(entries, term.cols);
+        if (!longFlag) {
+            const coloredDirs = subdirs.map(d => `\x1b[1m${colorText(d, dirColor)}\x1b[0m`);
+            const entries = [...coloredDirs, ...files];
+            return formatColumns(entries, term.cols);
+        }
+
+        const now = new Date();
+        const dateStr = `${now.toLocaleString('en-US', { month: 'short' })} ${now.getDate().toString().padStart(2, ' ')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+        const dirLines = subdirs.map(d => {
+            const perms = colorText('dr-xr-xr-x', dirColor);
+            const name = `\x1b[1m${colorText(d, dirColor)}\x1b[0m`;
+            return `${perms}  2 user user  4096 ${dateStr} ${name}`;
+        });
+
+        const fileLines = files.map(f => {
+            const data = DIRECTORY_FILES[current][f];
+            const size = typeof data === 'string' ? data.length : JSON.stringify(data).length;
+            const perms = '-r--r--r--';
+            return `${perms}  1 user user  ${size.toString().padStart(5, ' ')} ${dateStr} ${f}`;
+        });
+
+        const total = subdirs.length + files.length;
+        return [`total ${total}`, ...dirLines, ...fileLines].join('\r\n');
     }
 
     function cmdPwd() {
@@ -320,34 +344,34 @@
 }
 
     function cmdCd(args) {
-        if (!args.length) {
-            terminalState.currentDir = '/home/user';
-            return '';
-        }
-
+        if (!args.length) { terminalState.currentDir = '/home/user'; return; }
         const path = args[0];
 
-        if (path === '~') {
-            terminalState.currentDir = '/home/user';
-            return '';
+        if (path.startsWith('/')) {
+            const normalized = path === '/' ? '/home/user' : path.replace(/\/+$/, '');
+            if (DIRECTORY_SUBDIRS[normalized] !== undefined || DIRECTORY_FILES[normalized] !== undefined) {
+                terminalState.currentDir = normalized;
+                return;
+            }
+            return `cd: ${path}: No such file or directory`;
         }
 
         if (path === '..') {
-            if (terminalState.currentDir === '/') return '';
+            if (terminalState.currentDir === '/home/user') return;
             const parts = terminalState.currentDir.split('/').filter(Boolean);
             parts.pop();
-            terminalState.currentDir = parts.length ? '/' + parts.join('/') : '/';
-            return '';
+            terminalState.currentDir = '/' + parts.join('/');
+            return;
         }
 
-        if (path === '.') return '';
+        if (path === '.') return;
 
         const current = terminalState.currentDir;
-        const validSubdirs = DIRECTORY_SUBDIRS[current] || [];
+        const validSubdirs = (DIRECTORY_SUBDIRS[current] || []).map(d => d.split('/').pop());
 
         if (validSubdirs.includes(path)) {
             terminalState.currentDir = current === '/' ? `/${path}` : `${current}/${path}`;
-            return '';
+            return;
         }
 
         return `cd: ${path}: No such file or directory`;
@@ -375,6 +399,54 @@
         return '[CLEAR]';
     }
 
+    function cmdWc(args) {
+        if (!args.length) return 'Usage: wc <filename>';
+
+        const filename = args[0];
+        const current = terminalState.currentDir;
+        const files = DIRECTORY_FILES[current];
+
+        if (!files || !(filename in files)) {
+            return `wc: ${filename}: No such file or directory`;
+        }
+
+        const raw = files[filename];
+
+        let text;
+        if (current === '/home/user/projects') {
+            text = renderProject(raw);
+        } else {
+            text = raw;
+        }
+
+        const lines = text.split('\n').length;
+        const words = text.trim().split(/\s+/).filter(Boolean).length;
+        const chars = text.length;
+
+        return `  ${lines}  ${words}  ${chars} ${filename}`;
+    }
+
+    function cmdChmod(args) {
+        if (!args.length) return 'chmod: missing operand';
+        return `chmod: changing permissions of '${args[args.length - 1]}', you don't have permission!`;
+    }
+
+    function cmdTouch(args) {
+        if (!args.length) return 'touch: missing file operand';
+        return `touch: cannot touch '${args[0]}', you don't have permission!`;
+    }
+
+    function cmdRm(args) {
+        if (!args.length) return 'rm: missing operand';
+        return `rm: cannot remove '${args[0]}', you don't have permission!`;
+    }
+
+    function cmdMv(args) {
+        if (!args.length) return 'mv: missing file operand';
+        if (args.length < 2) return 'mv: missing destination file operand';
+        return `mv: cannot move '${args[0]}' to '${args[1]}', you don't have permission!`;
+    }
+
     const COMMANDS = {
         help: cmdHelp,
         ls: cmdLs,
@@ -389,6 +461,11 @@
         cd: cmdCd,
         uname: cmdUname,
         date: cmdDate,
+        chmod: cmdChmod,
+        touch: cmdTouch,
+        rm: cmdRm,
+        mv: cmdMv,
+        wc: cmdWc,
     };
 
     function executeCommand(commandInput) {
