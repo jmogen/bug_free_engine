@@ -152,6 +152,7 @@
         '/home': {},
         '/home/user': {
             'README.md': "# Welcome to My Portfolio\n\nThis is my personal portfolio website.\nExplore the projects and skills!",
+            'minesweeper': '__BINARY__',
         },
         '/home/user/projects': PROJECT_FILES,
     };
@@ -291,7 +292,8 @@
 
         if (!longFlag) {
             const coloredDirs = subdirs.map(d => `\x1b[1m${colorText(d, dirColor)}\x1b[0m`);
-            const entries = [...coloredDirs, ...files];
+            const coloredFiles = files.map(f => {const data = DIRECTORY_FILES[current][f]; return data === '__BINARY__' ? `\x1b[1m${colorText(f, THEME.green)}\x1b[0m` : f;});
+            const entries = [...coloredDirs, ...coloredFiles];
             return formatColumns(entries, term.cols);
         }
 
@@ -299,7 +301,7 @@
         const dateStr = `${now.toLocaleString('en-US', { month: 'short' })} ${now.getDate().toString().padStart(2, ' ')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
         const dirLines = subdirs.map(d => {
-            const perms = colorText('dr-xr-xr-x', dirColor);
+            const perms = 'dr-xr-xr-x';
             const name = `\x1b[1m${colorText(d, dirColor)}\x1b[0m`;
             return `${perms}  2 user user  4096 ${dateStr} ${name}`;
         });
@@ -307,10 +309,12 @@
         const fileLines = files.map(f => {
             const data = DIRECTORY_FILES[current][f];
             const size = typeof data === 'string' ? data.length : JSON.stringify(data).length;
-            const perms = '-r--r--r--';
-            return `${perms}  1 user user  ${size.toString().padStart(5, ' ')} ${dateStr} ${f}`;
-        });
-
+            const perms = data === '__BINARY__' ? '-rwxr-xr-x' : '-r--r--r--';
+            const name = data === '__BINARY__'
+                ? `\x1b[1m${colorText(f, THEME.green)}\x1b[0m`
+                : f;
+            return `${perms} 1 user user ${size.toString().padStart(5, ' ')} ${dateStr} ${name}`;
+         });
         const total = subdirs.length + files.length;
         return [`total ${total}`, ...dirLines, ...fileLines].join('\r\n');
     }
@@ -337,6 +341,7 @@
         }
 
         const files = DIRECTORY_FILES[current];
+        if (files[filename] === '__BINARY__') return `cat: ${filename}: Permission denied (binary file)`;
         if (!files || !(filename in files)) return `cat: ${filename}: No such file or directory`;
         const content = files[filename];
         if (current === "/home/user/projects") return { type: "project", data: content };
@@ -357,7 +362,7 @@
         }
 
         if (path === '..') {
-            if (terminalState.currentDir === '/home/user') return;
+            if (terminalState.currentDir === '/home') return;
             const parts = terminalState.currentDir.split('/').filter(Boolean);
             parts.pop();
             terminalState.currentDir = '/' + parts.join('/');
@@ -469,6 +474,11 @@
     };
 
     function executeCommand(commandInput) {
+        const firstWord = commandInput.trim().split(' ')[0];
+        if (firstWord === 'minesweeper' || firstWord === './minesweeper') {
+            startMinesweeper();
+            return null;
+        }
         if (!commandInput.trim()) return '';
         const parts = commandInput.trim().split(/\s+/);
         const cmd = parts[0];
@@ -547,9 +557,17 @@
         resizeTimeout = setTimeout(() => {
             fitAddon.fit();
             term.reset();
-            renderBanner();
+            if (!terminalState.inGame) {
+                renderBanner();
+            }
             outputHistory.forEach(renderEntry);
-            term.write(currentPrompt + command);
+            if (terminalState.inGame) {
+                term.write('\x1b7'); // re-anchor here, at the current (post-resize) position
+                term.write(msRenderBoard(msGame));
+                term.write('\r\n');
+            } else {
+                term.write(`${currentPrompt}${command}`);
+            }
         }, 100);
     });
 
@@ -1070,9 +1088,11 @@
         const commandNames = Object.keys(COMMANDS);
 
         let candidates;
+        
         if (isFirstWord) {
-            candidates = commandNames;
-        } else {
+            const binaries = files.filter(f => DIRECTORY_FILES[current][f] === '__BINARY__');
+            candidates = [...commandNames, ...binaries, ...binaries.map(b => './' + b)];
+        }else {
             const cmdWord = parts[0];
             candidates = (cmdWord === 'cd') ? dirs : [...files, ...dirs];
         }
@@ -1101,8 +1121,197 @@
         }
     }
 
+    const MINESWEEPER_CONFIG = { width: 9, height: 9, mines: 10 };
+
+    const MS_NUMBER_COLORS = {
+    1: '#4285f4', 2: '#34a853', 3: '#d01b24', 4: '#2075c7',
+    5: '#a57705', 6: '#259185', 7: '#000000', 8: '#666666',
+    };
+
+    let msGame = null;
+
+    function msIndex(game, x, y) { return y * game.w + x; }
+    function msInBounds(game, x, y) { return x >= 0 && x < game.w && y >= 0 && y < game.h; }
+
+    function msNeighbors(game, x, y) {
+        const coords = [];
+        for (let dy = -1; dy <= 1; dy++)
+            for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx, ny = y + dy;
+            if (msInBounds(game, nx, ny)) coords.push([nx, ny]);
+            }
+        return coords;
+    }
+
+    function msCreateGame() {
+        const { width, height, mines } = MINESWEEPER_CONFIG;
+        const grid = new Array(width * height).fill(null).map(() => ({
+            mine: false, revealed: false, flagged: false, adjacent: 0,
+        }));
+        return { w: width, h: height, mineCount: mines, grid, cursorX: 0, cursorY: 0, started: false, over: false, won: false };
+    }
+
+    function msPlaceMines(game, safeX, safeY) {
+        const safeIdx = msIndex(game, safeX, safeY);
+        const safeZone = new Set([safeIdx, ...msNeighbors(game, safeX, safeY).map(([x, y]) => msIndex(game, x, y))]);
+        let placed = 0;
+        while (placed < game.mineCount) {
+            const idx = Math.floor(Math.random() * game.grid.length);
+            if (safeZone.has(idx) || game.grid[idx].mine) continue;
+            game.grid[idx].mine = true;
+            placed++;
+        }
+        for (let y = 0; y < game.h; y++)
+            for (let x = 0; x < game.w; x++) {
+            const cell = game.grid[msIndex(game, x, y)];
+            if (cell.mine) continue;
+            cell.adjacent = msNeighbors(game, x, y).filter(([nx, ny]) => game.grid[msIndex(game, nx, ny)].mine).length;
+            }
+        game.started = true;
+    }
+
+    function msReveal(game, x, y) {
+        const cell = game.grid[msIndex(game, x, y)];
+        if (cell.revealed || cell.flagged) return;
+        if (!game.started) msPlaceMines(game, x, y);
+
+        const startCell = game.grid[msIndex(game, x, y)];
+        if (startCell.mine) {
+            startCell.revealed = true;
+            game.over = true;
+            game.won = false;
+            return;
+        }
+
+        const queue = [[x, y]];
+        const seen = new Set([msIndex(game, x, y)]);
+        while (queue.length) {
+            const [cx, cy] = queue.shift();
+            const c = game.grid[msIndex(game, cx, cy)];
+            if (c.flagged) continue;
+            c.revealed = true;
+            if (c.adjacent === 0) {
+            for (const [nx, ny] of msNeighbors(game, cx, cy)) {
+                const nIdx = msIndex(game, nx, ny);
+                if (seen.has(nIdx)) continue;
+                seen.add(nIdx);
+                const n = game.grid[nIdx];
+                if (!n.mine && !n.flagged) queue.push([nx, ny]);
+            }
+            }
+        }
+        msCheckWin(game);
+    }
+
+    function msToggleFlag(game, x, y) {
+        const cell = game.grid[msIndex(game, x, y)];
+        if (cell.revealed) return;
+        cell.flagged = !cell.flagged;
+    }
+
+    function msCheckWin(game) {
+        if (game.grid.every(c => c.mine || c.revealed)) {
+            game.over = true;
+            game.won = true;
+        }
+    }
+
+    function msFlagCount(game) { return game.grid.filter(c => c.flagged).length; }
+
+    function msRenderBoard(game) {
+        const lines = [];
+        const flagsLeft = game.mineCount - msFlagCount(game);
+        const status = game.over
+            ? (game.won ? colorText('YOU WIN!', THEME.green) : colorText('BOOM! Game over.', THEME.red))
+            : `Mines left: ${colorText(String(flagsLeft), THEME.yellow)}`;
+        lines.push(`Minesweeper  |  ${status}`);
+        lines.push(colorText('arrows/hjkl move · space/enter reveal · f flag · q quit', THEME.brightBlack));
+        lines.push('');
+
+        let header = '   ';
+        for (let x = 0; x < game.w; x++) header += ' ' + (x % 10);
+        lines.push(colorText(header, THEME.brightBlack));
+
+        for (let y = 0; y < game.h; y++) {
+            let row = colorText(String(y).padStart(2, ' ') + ' ', THEME.brightBlack);
+            for (let x = 0; x < game.w; x++) {
+            const cell = game.grid[msIndex(game, x, y)];
+            const isCursor = !game.over && game.cursorX === x && game.cursorY === y;
+            let glyph;
+            if (game.over && cell.mine) {
+                glyph = colorText('*', cell.revealed ? THEME.red : THEME.brightBlack);
+            } else if (cell.flagged) {
+                glyph = colorText('F', THEME.yellow);
+            } else if (!cell.revealed) {
+                glyph = colorText('.', THEME.brightBlack);
+            } else if (cell.adjacent === 0) {
+                glyph = ' ';
+            } else {
+                glyph = colorText(String(cell.adjacent), MS_NUMBER_COLORS[cell.adjacent] || THEME.foreground);
+            }
+            row += isCursor ? colorText('>', THEME.cyan) + glyph : ' ' + glyph;
+            }
+            lines.push(row);
+        }
+        return lines.join('\r\n');
+    }
+
+    let msLastFrameLines = 0;
+
+    function msRedraw() {
+        term.write('\x1b8');   // jump back to the anchor
+        term.write('\x1b[0J'); // erase everything from here to end of screen
+        term.write(msRenderBoard(msGame));
+        term.write('\r\n');
+    }
+
+    function startMinesweeper() {
+        msGame = msCreateGame();
+        terminalState.inGame = true;
+        term.write('\x1b7'); // save cursor position — this is the fixed anchor for the whole game
+        term.write('\x1b[?25l'); // hide the native blinking cursor
+        msRedraw();
+    }
+
+    function exitMinesweeper(printMessage) {
+        terminalState.inGame = false;
+        term.write('\x1b[?25h'); // show the native cursor again
+        msLastFrameLines = 0;
+        if (printMessage) {
+            term.write('\r\n' + printMessage);
+            term.write('\r\n');
+            outputHistory.push({ type: 'text', text: '\r\n' + printMessage });
+        }
+        term.write('\r\n');
+        term.write(colorText(getPromptRaw(), promptColor));
+    }
+
+    function handleMinesweeperInput(e) {
+        if (!msGame) return;
+
+        if (e === 'q' || e === 'Q' || e === '\u0003') {
+            exitMinesweeper(colorText('Quit minesweeper.', THEME.brightBlack));
+            return;
+        }
+
+        switch (e) {
+            case '\x1b[A': case 'k': msGame.cursorY = Math.max(0, msGame.cursorY - 1); break;
+            case '\x1b[B': case 'j': msGame.cursorY = Math.min(msGame.h - 1, msGame.cursorY + 1); break;
+            case '\x1b[C': case 'l': msGame.cursorX = Math.min(msGame.w - 1, msGame.cursorX + 1); break;
+            case '\x1b[D': case 'h': msGame.cursorX = Math.max(0, msGame.cursorX - 1); break;
+            case ' ': case '\r': msReveal(msGame, msGame.cursorX, msGame.cursorY); break;
+            case 'f': case 'F': msToggleFlag(msGame, msGame.cursorX, msGame.cursorY); break;
+            default: return; // ignore unrecognized keys
+        }
+
+        msRedraw();
+
+        if (msGame.over) {
+            exitMinesweeper(msGame.won ? colorText('You win!', THEME.green) : colorText('You hit a mine.', THEME.red));
+        }
+    }
     
-    // let currentIp = 'fetching...';
     let currentLocation = 'fetching...';
 
     async function loadIp() {
@@ -1145,6 +1354,10 @@
     let outputHistory = [];
 
     term.onData(e => {
+        if (terminalState.inGame) {
+            handleMinesweeperInput(e);
+            return;
+        }
         if (e === '\r') {
             if (command.trim()) {
                 commandHistory.push(command.trim());
@@ -1206,6 +1419,11 @@
         const output = executeCommand(input);
         const prompt = getPromptRaw();
         currentPrompt = colorText(getPromptRaw(), promptColor);
+
+        if (terminalState.inGame) {
+           return; // minesweeper already drew its own board; don't print anything else
+        }
+
         if (output === '[CLEAR]') {
             outputHistory = [];
             term.clear();
