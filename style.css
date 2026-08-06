@@ -56,8 +56,7 @@ body {
     width: 100%;
     height: 100%;
     flex: 1;
-    overflow: auto;
-    /* remove left padding so text is anchored to the left */
+    overflow: hidden;   /* let xterm's internal viewport handle all scrolling */
     padding: 10px 0 10px 0;
     background: transparent;
 }
@@ -94,23 +93,20 @@ body {
 
 
 /* Scrollbar styling */
-#terminal::-webkit-scrollbar {
+.xterm-viewport::-webkit-scrollbar {
     width: 10px;
 }
 
-
-#terminal::-webkit-scrollbar-track {
+.xterm-viewport::-webkit-scrollbar-track {
     background: var(--theme-bg);
 }
 
-
-#terminal::-webkit-scrollbar-thumb {
+.xterm-viewport::-webkit-scrollbar-thumb {
     background: var(--theme-fg);
     border-radius: 5px;
 }
 
-
-#terminal::-webkit-scrollbar-thumb:hover {
+.xterm-viewport::-webkit-scrollbar-thumb:hover {
     background: var(--theme-white);
 }
 
