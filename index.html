@@ -185,6 +185,7 @@
         return `Available commands:
   about        - Learn about me
   ls           - List directory contents
+  tree         - Display directory tree
   pwd          - Print working directory
   whoami       - Display current user
   echo [text]  - Echo text
@@ -198,6 +199,58 @@
   
 
   (Try: mkdir, sudo for some fun!)`;
+    }
+
+    function cmdTree(args) {
+        const showHidden = args.includes('-a');
+        const startDir = terminalState.currentDir;
+        const lines = [];
+        let dirCount = 0, fileCount = 0;
+        const dirColorTag = d => `\x1b[1m${colorText(d, dirColor)}\x1b[0m`;
+
+        function isHidden(name) {
+            return name.startsWith('.');
+        }
+
+        function renderDir(path, prefix) {
+            const subdirNames = (DIRECTORY_SUBDIRS[path] || [])
+                .filter(name => showHidden || !isHidden(name));
+
+            const fileNames = Object.keys(DIRECTORY_FILES[path] || {})
+                .filter(name => showHidden || !isHidden(name));
+
+            const childDirs = subdirNames.map(name => ({ type: 'dir', name, fullPath: `${path}/${name}` }));
+            const childFiles = fileNames.map(name => ({ type: 'file', name }));
+
+            const children = [...childDirs, ...childFiles]
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            children.forEach((child, i) => {
+                const isLast = i === children.length - 1;
+                const branch = isLast ? '└── ' : '├── ';
+                const nextPrefix = prefix + (isLast ? '    ' : '│   ');
+
+                if (child.type === 'dir') {
+                    dirCount++;
+                    lines.push(prefix + branch + dirColorTag(child.name));
+                    renderDir(child.fullPath, nextPrefix);
+                } else {
+                    fileCount++;
+                    const data = DIRECTORY_FILES[path][child.name];
+                    const label = data === '__BINARY__'
+                        ? `\x1b[1m${colorText(child.name, THEME.green)}\x1b[0m`
+                        : child.name;
+                    lines.push(prefix + branch + label);
+                }
+            });
+        }
+
+        lines.push(dirColorTag(startDir));
+        renderDir(startDir, '');
+        lines.push('');
+        lines.push(`${dirCount} director${dirCount === 1 ? 'y' : 'ies'}, ${fileCount} file${fileCount === 1 ? '' : 's'}`);
+
+        return lines.join('\r\n');
     }
 
     function cmdAbout() {
@@ -260,26 +313,29 @@
     }
 
     function wrapText(text, width) {
-        const words = text.split(' ');
+        const leadingMatch = text.match(/^ +/);
+        const leadingSpaces = leadingMatch ? leadingMatch[0] : '';
+        const rest = text.slice(leadingSpaces.length);
+
+        const words = rest.split(' ');
         const lines = [];
         let currentLine = '';
-        let currentVisibleLen = 0;
-
+        let currentVisibleLen = leadingSpaces.length;
         for (const word of words) {
             const wordVisibleLen = stripAnsi(word).length;
             const spaceLen = currentLine ? 1 : 0;
-
             if (currentVisibleLen + spaceLen + wordVisibleLen > width) {
                 lines.push(currentLine);
                 currentLine = word;
                 currentVisibleLen = wordVisibleLen;
             } else {
-                currentLine = currentLine ? `${currentLine} ${word}` : word;
+                currentLine = currentLine ? currentLine + ' ' + word : word;
                 currentVisibleLen += spaceLen + wordVisibleLen;
             }
         }
         if (currentLine) lines.push(currentLine);
-        return lines.join('\r\n');
+        if (lines.length > 0) lines[0] = leadingSpaces + lines[0];
+        return lines.join('\n');
     }
 
 
@@ -291,9 +347,20 @@
         const longFlag = args.includes('-l') || args.includes('-la') || args.includes('-al');
 
         if (!longFlag) {
-            const coloredDirs = subdirs.map(d => `\x1b[1m${colorText(d, dirColor)}\x1b[0m`);
-            const coloredFiles = files.map(f => {const data = DIRECTORY_FILES[current][f]; return data === '__BINARY__' ? `\x1b[1m${colorText(f, THEME.green)}\x1b[0m` : f;});
-            const entries = [...coloredDirs, ...coloredFiles];
+            const dirEntries = subdirs.map(d => ({ type: 'dir', name: d }));
+            const fileEntries = files.map(f => ({ type: 'file', name: f }));
+            const sorted = [...dirEntries, ...fileEntries].sort((a, b) => a.name.localeCompare(b.name));
+
+            const entries = sorted.map(entry => {
+                if (entry.type === 'dir') {
+                    return `\x1b[1m${colorText(entry.name, dirColor)}\x1b[0m`;
+                }
+                const data = DIRECTORY_FILES[current][entry.name];
+                return data === '__BINARY__'
+                    ? `\x1b[1m${colorText(entry.name, THEME.green)}\x1b[0m`
+                    : entry.name;
+            });
+
             return formatColumns(entries, term.cols);
         }
 
@@ -471,6 +538,7 @@
         rm: cmdRm,
         mv: cmdMv,
         wc: cmdWc,
+        tree: cmdTree,
     };
 
     function executeCommand(commandInput) {
