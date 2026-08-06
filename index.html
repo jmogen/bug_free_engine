@@ -215,12 +215,15 @@
         function renderDir(path, prefix) {
             const subdirNames = (DIRECTORY_SUBDIRS[path] || [])
                 .filter(name => showHidden || !isHidden(name));
+
             const fileNames = Object.keys(DIRECTORY_FILES[path] || {})
                 .filter(name => showHidden || !isHidden(name));
 
             const childDirs = subdirNames.map(name => ({ type: 'dir', name, fullPath: `${path}/${name}` }));
             const childFiles = fileNames.map(name => ({ type: 'file', name }));
-            const children = [...childDirs, ...childFiles];
+
+            const children = [...childDirs, ...childFiles]
+                .sort((a, b) => a.name.localeCompare(b.name));
 
             children.forEach((child, i) => {
                 const isLast = i === children.length - 1;
@@ -344,9 +347,20 @@
         const longFlag = args.includes('-l') || args.includes('-la') || args.includes('-al');
 
         if (!longFlag) {
-            const coloredDirs = subdirs.map(d => `\x1b[1m${colorText(d, dirColor)}\x1b[0m`);
-            const coloredFiles = files.map(f => {const data = DIRECTORY_FILES[current][f]; return data === '__BINARY__' ? `\x1b[1m${colorText(f, THEME.green)}\x1b[0m` : f;});
-            const entries = [...coloredDirs, ...coloredFiles];
+            const dirEntries = subdirs.map(d => ({ type: 'dir', name: d }));
+            const fileEntries = files.map(f => ({ type: 'file', name: f }));
+            const sorted = [...dirEntries, ...fileEntries].sort((a, b) => a.name.localeCompare(b.name));
+
+            const entries = sorted.map(entry => {
+                if (entry.type === 'dir') {
+                    return `\x1b[1m${colorText(entry.name, dirColor)}\x1b[0m`;
+                }
+                const data = DIRECTORY_FILES[current][entry.name];
+                return data === '__BINARY__'
+                    ? `\x1b[1m${colorText(entry.name, THEME.green)}\x1b[0m`
+                    : entry.name;
+            });
+
             return formatColumns(entries, term.cols);
         }
 
